@@ -1,4 +1,4 @@
-import { CommandInteraction, Client, CacheType } from 'discord.js';
+import { CommandInteraction, Client } from 'discord.js';
 import pingCommand from './ping';
 
 // Correctly mock Discord.js objects
@@ -7,9 +7,9 @@ jest.mock('discord.js', () => {
     SlashCommandBuilder: jest.fn().mockImplementation(() => ({
       setName: jest.fn().mockReturnThis(),
       setDescription: jest.fn().mockReturnThis(),
-      toJSON: jest.fn().mockReturnValue({ name: 'ping', description: 'Replies with Pong' })
+      toJSON: jest.fn().mockReturnValue({ name: 'ping', description: 'Replies with Pong' }),
     })),
-    Client: jest.fn()
+    Client: jest.fn(),
   };
 });
 
@@ -28,7 +28,7 @@ describe('Ping Command', () => {
 
     // Create mock reply function that returns a message with timestamp
     replyMock = jest.fn().mockResolvedValue({
-      createdTimestamp: sentTimestamp
+      createdTimestamp: sentTimestamp,
     });
 
     // Create mock editReply function
@@ -36,7 +36,7 @@ describe('Ping Command', () => {
 
     // Create mock client with proper typing
     const mockClient = {
-      ws: { ping: 50 }
+      ws: { ping: 50 },
     } as unknown as Client<true>;
 
     // Create a proper mock for CommandInteraction
@@ -107,20 +107,14 @@ describe('Ping Command', () => {
 
     // Check that reply was called with the correct message
     expect(replyMock).toHaveBeenCalledWith({ content: 'Pinging...', fetchReply: true });
-    
+
     // Check that editReply was called with ping information
-    expect(editReplyMock).toHaveBeenCalledWith(
-      expect.stringContaining('Pong! 🏓')
-    );
-    
+    expect(editReplyMock).toHaveBeenCalledWith(expect.stringContaining('Pong! 🏓'));
+
     // Verify latency information is included
-    expect(editReplyMock).toHaveBeenCalledWith(
-      expect.stringContaining('Bot Latency: 100ms')
-    );
-    
+    expect(editReplyMock).toHaveBeenCalledWith(expect.stringContaining('Bot Latency: 100ms'));
+
     // Verify API latency information is included
-    expect(editReplyMock).toHaveBeenCalledWith(
-      expect.stringContaining('API Latency: 50ms')
-    );
+    expect(editReplyMock).toHaveBeenCalledWith(expect.stringContaining('API Latency: 50ms'));
   });
 });
