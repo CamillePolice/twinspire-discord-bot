@@ -4,7 +4,7 @@
         {
             "label": "Run Tests with Coverage (Full)",
             "type": "shell",
-            "command": "yarn",
+            "command": "npm",
             "args": [
                 "test"
             ],
@@ -18,7 +18,7 @@
         {
             "label": "Run Tests with Coverage (Simple)",
             "type": "shell",
-            "command": "yarn",
+            "command": "npm",
             "args": [
                 "test:cov"
             ],
@@ -35,7 +35,7 @@
         {
             "label": "Build Project",
             "type": "shell",
-            "command": "yarn",
+            "command": "npm",
             "args": [
                 "build"
             ],
@@ -52,7 +52,7 @@
         {
             "label": "Start Dev Server",
             "type": "shell",
-            "command": "yarn",
+            "command": "npm",
             "args": [
                 "dev"
             ],
