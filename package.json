@@ -11,7 +11,7 @@
     "lint": "eslint . --ext .ts",
     "format": "prettier --write \"**/*.ts\"",
     "test": "jest --no-cache",
-    "test:cov": "jest --coverage --coverageReporters=text-summary --no-cache"
+    "test:cov": "jest  --coverage --runInBand --detectOpenHandles --config jest.json"
   },
   "dependencies": {
     "discord.js": "^14.14.1",
