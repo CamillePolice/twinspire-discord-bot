@@ -1,4 +1,4 @@
-import { Collection, REST, Routes, SlashCommandBuilder } from 'discord.js';
+import { Client, Collection, REST, Routes, SlashCommandBuilder } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
@@ -8,7 +8,7 @@ dotenv.config();
 
 // Define command interface
 export interface Command {
-  data: SlashCommandBuilder | unknown;
+  data: SlashCommandBuilder;
   execute: (interaction: unknown) => Promise<void>;
 }
 
@@ -61,7 +61,9 @@ export const loadCommands = async () => {
 };
 
 // Register slash commands with Discord API
-export const registerCommands = async () => {
+export const registerCommands = async (client: Client) => {
+  console.log('Client', client);
+
   if (!process.env.DISCORD_TOKEN || !process.env.APPLICATION_ID) {
     console.error('Missing environment variables: DISCORD_TOKEN or APPLICATION_ID');
     return;
