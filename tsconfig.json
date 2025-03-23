@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "target": "ES2022",
+        "module": "CommonJS", // Changed from NodeNext to CommonJS
+        "moduleResolution": "Node", // Changed from NodeNext to Node
+        "esModuleInterop": true,
+        "outDir": "./dist",
+        "rootDir": "./src",
+        "strict": true,
+        "declaration": true,
+        "resolveJsonModule": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "sourceMap": true
+    },
+    "include": [
+        "src/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist"
+    ]
+}
