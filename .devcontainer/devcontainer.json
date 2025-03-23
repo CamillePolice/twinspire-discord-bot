@@ -72,7 +72,8 @@
                 "mhutchie.git-graph",
                 "orta.vscode-yarn",
                 "orta.vscode-jest",
-                "firsttris.vscode-jest-runner"
+                "firsttris.vscode-jest-runner",
+                "github.vscode-github-actions"
             ]
         }
     }
