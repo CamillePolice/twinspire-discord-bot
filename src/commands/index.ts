@@ -17,7 +17,7 @@ export const commands = new Collection<string, Command>();
 
 // Load commands from files
 export const loadCommands = async () => {
-  const commandsPath = path.join(__dirname, 'commands');
+  const commandsPath = path.join(__dirname);
 
   // Create commands directory if it doesn't exist
   if (!fs.existsSync(commandsPath)) {
@@ -62,8 +62,6 @@ export const loadCommands = async () => {
 
 // Register slash commands with Discord API
 export const registerCommands = async (client: Client) => {
-  console.log('Client', client);
-
   if (!process.env.DISCORD_TOKEN || !process.env.APPLICATION_ID) {
     console.error('Missing environment variables: DISCORD_TOKEN or APPLICATION_ID');
     return;
@@ -72,24 +70,23 @@ export const registerCommands = async (client: Client) => {
   try {
     console.log('Started refreshing application (/) commands.');
 
-    const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
+    const rest = new REST({ version: '10' }).setToken(client.token!);
     const commandsData = Array.from(commands.values()).map(command => command.data.toJSON());
 
     // If GUILD_ID is specified, register commands to a specific guild for faster development
-    if (process.env.GUILD_ID && process.env.NODE_ENV === 'development') {
+    if (process.env.GUILD_ID) {
+      // Guild-specific commands for faster development
       await rest.put(
         Routes.applicationGuildCommands(process.env.APPLICATION_ID, process.env.GUILD_ID),
         { body: commandsData },
       );
-      console.log(
-        `Successfully reloaded application (/) commands for guild ${process.env.GUILD_ID}.`,
-      );
+      console.log(`Successfully registered commands to guild ${process.env.GUILD_ID}`);
     } else {
-      // Register globally
+      // Global commands (takes up to an hour to propagate)
       await rest.put(Routes.applicationCommands(process.env.APPLICATION_ID), {
         body: commandsData,
       });
-      console.log('Successfully reloaded application (/) commands globally.');
+      console.log('Successfully registered global application commands');
     }
   } catch (error) {
     console.error('Error registering commands:', error);
