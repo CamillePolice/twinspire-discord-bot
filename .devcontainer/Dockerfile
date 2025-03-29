@@ -1,13 +1,15 @@
 # Use Node.js 22 Alpine as base image
 FROM node:22-alpine
 
-# Install system dependencies
+# Install system dependencies including bash for Docker-in-Docker feature
 RUN apk add --no-cache \
     git \
     openssh \
     bash \
     curl \
-    wget
+    wget \
+    docker \
+    docker-cli-compose
 
 # Set the working directory
 WORKDIR /workspaces/discord-bot

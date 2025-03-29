@@ -6,15 +6,32 @@
         "dockerfile": "Dockerfile"
     },
     "remoteUser": "node",
+    "features": {
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {
+            "version": "latest",
+            "enableNonRootDocker": "true",
+            "moby": "true"
+        }
+    },
     "containerEnv": {
         "REMOTE_CONTAINERS": "true"
     },
     "forwardPorts": [
-        3000
+        3000,
+        27017,
+        8081
     ],
     "portsAttributes": {
         "3000": {
             "label": "Discord Bot API",
+            "onAutoForward": "notify"
+        },
+        "27017": {
+            "label": "MongoDB",
+            "onAutoForward": "notify"
+        },
+        "8081": {
+            "label": "MongoDB Express",
             "onAutoForward": "notify"
         }
     },
@@ -31,7 +48,7 @@
         "type=bind,source=${localEnv:HOME}/.ssh,target=/home/node/.sshhost/"
     ],
     "postStartCommand": "mkdir -p /home/node/.ssh && cp -r /home/node/.sshhost/* /home/node/.ssh/ && chmod -R 600 /home/node/.ssh/*",
-    "postCreateCommand": "echo /commandhistory/.bash_history_host >> /commandhistory/.bash_history && yarn install --frozen-lockfile",
+    "postCreateCommand": "echo /commandhistory/.bash_history_host >> /commandhistory/.bash_history && npm install",
     "customizations": {
         "vscode": {
             "workspace": {

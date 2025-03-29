@@ -5,7 +5,7 @@
         "moduleResolution": "Node", // Changed from NodeNext to Node
         "esModuleInterop": true,
         "outDir": "./dist",
-        "rootDir": "./src",
+        "rootDir": "bot/src",
         "strict": true,
         "declaration": true,
         "resolveJsonModule": true,
@@ -14,7 +14,10 @@
         "sourceMap": true
     },
     "include": [
-        "src/**/*"
+        "bot/src/**/*",
+        "bot/commands",
+        "bot/utils",
+        "bot/index.ts"
     ],
     "exclude": [
         "node_modules",

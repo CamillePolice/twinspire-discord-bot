@@ -11,14 +11,19 @@
     "lint": "eslint . --ext .ts",
     "format": "prettier --write \"**/*.ts\"",
     "test": "jest --no-cache",
-    "test:cov": "jest  --coverage --runInBand --detectOpenHandles --config jest.json"
+    "test:cov": "jest  --coverage --runInBand --detectOpenHandles --config jest.json",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
   },
   "dependencies": {
     "discord.js": "^14.14.1",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "mongodb": "^5.7.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.7",
+    "@types/mongodb": "^4.0.7",
     "@types/node": "^20.8.10",
     "@typescript-eslint/eslint-plugin": "^6.9.1",
     "@typescript-eslint/parser": "^6.9.1",

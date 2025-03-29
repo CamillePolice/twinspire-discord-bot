@@ -37,6 +37,7 @@
             "type": "shell",
             "command": "npm",
             "args": [
+                "run",
                 "build"
             ],
             "group": {
@@ -54,8 +55,102 @@
             "type": "shell",
             "command": "npm",
             "args": [
+                "run",
                 "dev"
             ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Docker: Start All Services",
+            "type": "shell",
+            "command": "docker-compose",
+            "args": [
+                "up",
+                "-d"
+            ],
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Docker: Stop All Services",
+            "type": "shell",
+            "command": "docker-compose",
+            "args": [
+                "down"
+            ],
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Docker: View Logs",
+            "type": "shell",
+            "command": "docker-compose",
+            "args": [
+                "logs",
+                "-f"
+            ],
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Docker: Restart Bot Service",
+            "type": "shell",
+            "command": "docker-compose",
+            "args": [
+                "restart",
+                "bot"
+            ],
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "MongoDB: Backup Database",
+            "type": "shell",
+            "command": "docker-compose",
+            "args": [
+                "exec",
+                "mongo",
+                "mongodump",
+                "--out=/data/db/backup-$(date +%Y%m%d-%H%M%S)",
+                "--username",
+                "admin",
+                "--password",
+                "password",
+                "--authenticationDatabase",
+                "admin"
+            ],
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Setup Project",
+            "type": "shell",
+            "command": "./setup.sh",
+            "group": "none",
             "presentation": {
                 "reveal": "always",
                 "panel": "new"
