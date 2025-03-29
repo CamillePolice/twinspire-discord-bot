@@ -1,4 +1,5 @@
 import { CacheType, CommandInteraction, SlashCommandBuilder, CommandInteractionOptionResolver } from 'discord.js';
+import { randomInt } from 'crypto';
 
 export default {
   data: new SlashCommandBuilder()
@@ -19,10 +20,8 @@ export default {
         return;
     }
     
-    const randomArray = new Uint32Array(1);
-    crypto.getRandomValues(randomArray);
-    const randomNumber = randomArray[0] % (max + 1);
-    
+    const randomNumber = randomInt(0, max + 1); // Utilisation de randomInt de crypto
+
     await interaction.reply(`🎲 Résultat du roll : **${randomNumber}** (entre 0 et ${max})`);
   },
 };
