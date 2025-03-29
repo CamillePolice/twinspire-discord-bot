@@ -1,4 +1,4 @@
-import { Events, Message } from 'discord.js';
+import { Events, Message, TextChannel } from 'discord.js';
 
 export default {
   name: Events.MessageCreate,
@@ -14,7 +14,9 @@ export default {
 
     // Vérifie si le message contient une variante
     if (biereVariations.some(variant => message.content.includes(variant))) {
-      await message.channel.send("@kurofs ! Quelqu'un t'appelle ! Viens vite !");
+      if (message.channel instanceof TextChannel) {
+        await message.channel.send("@kurofs ! Quelqu'un t'appelle ! Viens vite !");
+      }
     }
   },
 };
