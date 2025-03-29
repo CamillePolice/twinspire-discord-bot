@@ -14,7 +14,7 @@ export default {
 
     // Vérifie si le message contient une variante
     if (biereVariations.some(variant => message.content.includes(variant))) {
-      await message.channel.send("Kuroooo ! Quelqu'un t'appelle ! Viens vite !");
+      await message.channel.send("@kurofs ! Quelqu'un t'appelle ! Viens vite !");
     }
   },
 };
