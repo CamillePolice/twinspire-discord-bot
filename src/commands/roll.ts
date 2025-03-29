@@ -1,4 +1,4 @@
-import { CacheType, CommandInteraction, SlashCommandBuilder } from 'discord.js';
+import { CacheType, CommandInteraction, SlashCommandBuilder, CommandInteractionOptionResolver } from 'discord.js';
 
 export default {
   data: new SlashCommandBuilder()
@@ -11,7 +11,9 @@ export default {
     ),
 
   async execute(interaction: CommandInteraction<CacheType>) {
-    const max = interaction.options.getInteger('max', true);
+    const options = interaction.options as CommandInteractionOptionResolver;
+    const max = options.getInteger('max', true);
+    
     if (max < 0) {
         await interaction.reply('Veuillez entrer un nombre positif.');
         return;
