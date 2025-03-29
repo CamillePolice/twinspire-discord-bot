@@ -19,7 +19,10 @@ export default {
         return;
     }
     
-    const randomNumber = Math.floor(Math.random() * (max + 1));
+    const randomArray = new Uint32Array(1);
+    crypto.getRandomValues(randomArray);
+    const randomNumber = randomArray[0] % (max + 1);
+    
     await interaction.reply(`🎲 Résultat du roll : **${randomNumber}** (entre 0 et ${max})`);
   },
 };
