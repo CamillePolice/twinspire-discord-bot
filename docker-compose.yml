@@ -9,7 +9,7 @@ services:
     container_name: twinspire-discord-bot
     restart: unless-stopped
     volumes:
-      - .:/workspaces/discord-bot
+      - ./bot:/workspaces/discord-bot
       - /workspaces/discord-bot/node_modules
     environment:
       - NODE_ENV=${NODE_ENV:-development}

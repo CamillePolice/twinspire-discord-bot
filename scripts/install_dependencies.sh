@@ -17,4 +17,7 @@ fi
 
 log "Install node dependencies for bot..."
 cd /workspaces/twinspire-discord-bot/bot && npm install
-log "Installation successful
+log "Installation successful"
+
+log "Setup completed successfully"
+exit 0

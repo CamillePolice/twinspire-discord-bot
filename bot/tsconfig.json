@@ -14,7 +14,7 @@
         "sourceMap": true
     },
     "include": [
-        "src/**/*",
+        "**/*",
         "commands",
         "utils",
         "index.ts"

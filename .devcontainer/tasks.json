@@ -2,13 +2,23 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Run Tests with Coverage (Full)",
+            "label": "Start Docker Containers",
             "type": "shell",
-            "command": "npm",
-            "args": [
-                "test"
-            ],
-            "group": "test",
+            "command": "${workspaceFolder}/scripts/start_docker.sh",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Install Dependencies",
+            "type": "shell",
+            "command": "${workspaceFolder}/scripts/install_dependencies.sh",
             "presentation": {
                 "reveal": "always",
                 "panel": "new"
@@ -16,146 +26,40 @@
             "problemMatcher": []
         },
         {
-            "label": "Run Tests with Coverage (Simple)",
-            "type": "shell",
-            "command": "npm",
-            "args": [
-                "test:cov"
-            ],
+            "label": "Start Development Server",
+            "type": "npm",
+            "script": "dev",
+            "problemMatcher": "$tsc-watch",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "dependsOn": ["Start Docker Containers", "Install Dependencies"]
+        },
+        {
+            "label": "Run Tests",
+            "type": "npm",
+            "script": "test",
             "group": {
                 "kind": "test",
                 "isDefault": true
             },
             "presentation": {
                 "reveal": "always",
-                "panel": "new"
+                "panel": "dedicated"
             },
-            "problemMatcher": []
+            "problemMatcher": ["$tsc", "$jest"]
         },
         {
-            "label": "Build Project",
-            "type": "shell",
-            "command": "npm",
-            "args": [
-                "run",
-                "build"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
+            "label": "Build",
+            "type": "npm",
+            "script": "build",
+            "group": "build",
+            "problemMatcher": ["$tsc"],
             "presentation": {
-                "reveal": "always",
-                "panel": "new"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Start Dev Server",
-            "type": "shell",
-            "command": "npm",
-            "args": [
-                "run",
-                "dev"
-            ],
-            "presentation": {
-                "reveal": "always",
-                "panel": "new"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Docker: Start All Services",
-            "type": "shell",
-            "command": "docker-compose",
-            "args": [
-                "up",
-                "-d"
-            ],
-            "group": "none",
-            "presentation": {
-                "reveal": "always",
-                "panel": "new"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Docker: Stop All Services",
-            "type": "shell",
-            "command": "docker-compose",
-            "args": [
-                "down"
-            ],
-            "group": "none",
-            "presentation": {
-                "reveal": "always",
-                "panel": "new"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Docker: View Logs",
-            "type": "shell",
-            "command": "docker-compose",
-            "args": [
-                "logs",
-                "-f"
-            ],
-            "group": "none",
-            "presentation": {
-                "reveal": "always",
-                "panel": "new"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Docker: Restart Bot Service",
-            "type": "shell",
-            "command": "docker-compose",
-            "args": [
-                "restart",
-                "bot"
-            ],
-            "group": "none",
-            "presentation": {
-                "reveal": "always",
-                "panel": "new"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "MongoDB: Backup Database",
-            "type": "shell",
-            "command": "docker-compose",
-            "args": [
-                "exec",
-                "mongo",
-                "mongodump",
-                "--out=/data/db/backup-$(date +%Y%m%d-%H%M%S)",
-                "--username",
-                "admin",
-                "--password",
-                "password",
-                "--authenticationDatabase",
-                "admin"
-            ],
-            "group": "none",
-            "presentation": {
-                "reveal": "always",
-                "panel": "new"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Setup Project",
-            "type": "shell",
-            "command": "./setup.sh",
-            "group": "none",
-            "presentation": {
-                "reveal": "always",
-                "panel": "new"
-            },
-            "problemMatcher": []
+                "reveal": "silent",
+                "panel": "shared"
+            }
         }
     ]
 }
