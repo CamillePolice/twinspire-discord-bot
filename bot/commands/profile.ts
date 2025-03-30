@@ -1,5 +1,5 @@
 // src/commands/profile.ts
-import { CommandInteraction, SlashCommandBuilder, EmbedBuilder } from 'discord.js';
+import { ChatInputCommandInteraction, SlashCommandBuilder, EmbedBuilder, CacheType } from 'discord.js';
 import { createUser, getUsersCollection, User } from '../database/models';
 import { logger } from '../utils/logger';
 
@@ -14,7 +14,7 @@ export default {
         .setRequired(false)
     ),
 
-  async execute(interaction: CommandInteraction) {
+  async execute(interaction: ChatInputCommandInteraction<CacheType>) {
     // Defer the reply to give us time to fetch data
     await interaction.deferReply();
 

@@ -1,16 +1,5 @@
 #!/bin/bash
 
-# Create database directory structure
-mkdir -p database/data
-mkdir -p database/config
-mkdir -p database/init
-
-# Create source code directory structure if not exists
-mkdir -p src/database
-mkdir -p src/utils
-mkdir -p src/commands
-mkdir -p logs
-
 # Create MongoDB initialization script
 cat > database/init/001-create-collections.js << 'EOF'
 // Create collections with validation
