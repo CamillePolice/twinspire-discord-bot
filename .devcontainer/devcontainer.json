@@ -7,11 +7,7 @@
     },
     "remoteUser": "node",
     "features": {
-        "ghcr.io/devcontainers/features/docker-in-docker:2": {
-            "version": "latest",
-            "enableNonRootDocker": "true",
-            "moby": "true"
-        }
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {},
     },
     "containerEnv": {
         "REMOTE_CONTAINERS": "true"
@@ -48,7 +44,7 @@
         "type=bind,source=${localEnv:HOME}/.ssh,target=/home/node/.sshhost/"
     ],
     "postStartCommand": "mkdir -p /home/node/.ssh && cp -r /home/node/.sshhost/* /home/node/.ssh/ && chmod -R 600 /home/node/.ssh/*",
-    "postCreateCommand": "echo /commandhistory/.bash_history_host >> /commandhistory/.bash_history && npm install",
+    "postCreateCommand": "echo /commandhistory/.bash_history_host >> /commandhistory/.bash_history",
     "customizations": {
         "vscode": {
             "workspace": {
