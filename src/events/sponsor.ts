@@ -5,27 +5,26 @@ import fs from 'fs';
 export default {
   name: Events.MessageCreate,
   async execute(message: Message) {
-    console.log(`Message reçu: ${message.content}`); // DEBUG
-    console.log(`Auteur: ${message.author.tag}`); // DEBUG
+    console.log("La fonction execute a été appelée."); // DEBUG
 
-    if (message.author.bot) return;
+    if (message.author.bot) {
+      console.log("Message ignoré car il provient d'un bot."); // DEBUG
+      return;
+    }
 
-    const twinspireVariations = [
-        'twinspire'
-      ];
-  
+    console.log(`Message reçu: "${message.content}"`); // DEBUG
 
-    // Liste des images locales
-    const sponsorImages = [
-      path.join(__dirname, '../../images/supporter_1.png'),
-      path.join(__dirname, '../../images/supporter_2.png')
-    ];
+    const twinspireVariations = ['twinspire'];
 
-    // Vérifie si le message contient "twinspire" (insensible à la casse)
-    if (twinspireVariations.some(variant => message.content.includes(variant))) {
+    if (twinspireVariations.some(variant => message.content.toLowerCase().includes(variant))) {
+      console.log("Mot-clé détecté !");
       console.log("Mot-clé détecté ! Sélection d'une image..."); // DEBUG
 
       // Sélection aléatoire d'une image
+      const sponsorImages = [
+        path.join(__dirname, '../../images/supporter_1.png'),
+        path.join(__dirname, '../../images/supporter_2.png')
+      ];
       const randomImage = sponsorImages[Math.floor(Math.random() * sponsorImages.length)];
 
       // Vérifie si l'image existe avant de l'envoyer
