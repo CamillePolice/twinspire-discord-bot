@@ -10,6 +10,11 @@ export default {
 
     if (message.author.bot) return;
 
+    const twinspireVariations = [
+        'twinspire'
+      ];
+  
+
     // Liste des images locales
     const sponsorImages = [
       path.join(__dirname, '../../images/supporter_1.png'),
@@ -17,7 +22,7 @@ export default {
     ];
 
     // Vérifie si le message contient "twinspire" (insensible à la casse)
-    if (message.content.toLowerCase().includes("twinspire")) {
+    if (twinspireVariations.some(variant => message.content.includes(variant))) {
       console.log("Mot-clé détecté ! Sélection d'une image..."); // DEBUG
 
       // Sélection aléatoire d'une image
