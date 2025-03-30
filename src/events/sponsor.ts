@@ -6,6 +6,7 @@ export default {
   name: Events.MessageCreate,
   async execute(message: Message) {
     console.log(`Message reçu: ${message.content}`); // DEBUG
+    console.log(`Auteur: ${message.author.tag}`); // DEBUG
 
     if (message.author.bot) return;
 
@@ -34,6 +35,8 @@ export default {
         const attachment = new AttachmentBuilder(randomImage);
         await message.channel.send({ content: "Voici notre sponsor du jour !", files: [attachment] });
       }
+    } else {
+      console.log("Mot-clé non détecté.");
     }
   },
 };
