@@ -1,4 +1,3 @@
-// src/commands/profile.ts
 import {
   ChatInputCommandInteraction,
   SlashCommandBuilder,
