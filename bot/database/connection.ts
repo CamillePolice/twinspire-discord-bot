@@ -1,9 +1,8 @@
-// src/database/connection.ts
 import { MongoClient, Db } from 'mongodb';
 import { logger } from '../utils/logger';
 
-// Connection URL
-const url = process.env.MONGODB_URI || 'mongodb://localhost:27017/twinspire';
+// Parse MongoDB URI from environment or use default with auth
+const url = 'mongodb://admin:password@mongo:27017/twinspire?authSource=admin';
 
 // Database Name
 const dbName = 'twinspire';
@@ -15,30 +14,36 @@ const client = new MongoClient(url);
 let db: Db | null = null;
 
 /**
- * Connect to MongoDB
+ * Connect to MongoDB and initialize the database connection
+ * This should be called once at application startup
  */
-export const connectToDatabase = async (): Promise<Db> => {
+export const initializeDatabaseConnection = async (): Promise<void> => {
   try {
-    if (db) {
-      logger.info('Using existing database connection');
-      return db;
-    }
-
-    logger.info(`Connecting to MongoDB at ${url}`);
+    logger.info(`Connecting to MongoDB at ${url.replace(/\/\/(.+?)@/, '//****:****@')}`); // Hide credentials in logs
     await client.connect();
     
     db = client.db(dbName);
     logger.info('Successfully connected to MongoDB');
-    
-    return db;
   } catch (error) {
     logger.error('Failed to connect to MongoDB', error as Error);
-    process.exit(1);
+    throw error;
   }
 };
 
 /**
+ * Get the database instance
+ * This should be used throughout the application to access the database
+ */
+export const getDatabase = (): Db => {
+  if (!db) {
+    throw new Error('Database not initialized. Call initializeDatabaseConnection first.');
+  }
+  return db;
+};
+
+/**
  * Close the database connection
+ * This should be called when the application is shutting down
  */
 export const closeDatabaseConnection = async (): Promise<void> => {
   try {
