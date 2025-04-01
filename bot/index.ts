@@ -37,10 +37,10 @@ registerEvents(client);
   try {
     // Connect to MongoDB first - this establishes the connection for the entire application
     await initializeDatabaseConnection();
-    
+
     // Then login to Discord
     await client.login(process.env.DISCORD_TOKEN);
-    
+
     logger.info('Bot successfully started');
   } catch (error) {
     logger.error('Failed to start the bot:', error as Error);

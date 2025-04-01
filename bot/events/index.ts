@@ -12,6 +12,6 @@ export function registerEvents(client: Client): void {
   client.on('interactionCreate', interactionCreate);
   client.on('guildCreate', guildCreate);
   client.on('guildDelete', guildDelete);
-  
+
   logger.info('Event handlers registered');
 }

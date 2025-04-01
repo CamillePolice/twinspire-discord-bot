@@ -1,7 +1,7 @@
 {
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
-        "project": "bot/tsconfig.json",
+        "project": "tsconfig.json",
         "sourceType": "module"
     },
     "plugins": [

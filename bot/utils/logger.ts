@@ -1,4 +1,3 @@
-// src/utils/logger.ts
 import fs from 'fs';
 import path from 'path';
 
@@ -84,7 +83,7 @@ process.on('uncaughtException', error => {
 });
 
 // Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', reason => {
   logger.error(
     `Unhandled Promise Rejection`,
     reason instanceof Error ? reason : new Error(String(reason)),

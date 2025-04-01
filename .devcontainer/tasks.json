@@ -60,6 +60,28 @@
                 "reveal": "silent",
                 "panel": "shared"
             }
+        },
+        {
+            "label": "Lint",
+            "type": "npm",
+            "script": "lint",
+            "problemMatcher": ["$eslint-stylish"],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "group": "test"
+        },
+        {
+            "label": "Lint Autofix",
+            "type": "npm",
+            "script": "lint:fix",
+            "problemMatcher": ["$eslint-stylish"],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "group": "test"
         }
     ]
 }

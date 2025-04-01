@@ -21,7 +21,7 @@ export const initializeDatabaseConnection = async (): Promise<void> => {
   try {
     logger.info(`Connecting to MongoDB at ${url.replace(/\/\/(.+?)@/, '//****:****@')}`); // Hide credentials in logs
     await client.connect();
-    
+
     db = client.db(dbName);
     logger.info('Successfully connected to MongoDB');
   } catch (error) {

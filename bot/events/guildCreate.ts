@@ -4,27 +4,27 @@ import { logger } from '../utils/logger';
 
 export async function guildCreate(guild: Guild): Promise<void> {
   logger.info(`Joined new guild: ${guild.name} (${guild.id})`);
-  
+
   try {
     // Get the database instance
     const db = getDatabase();
     const guildConfigsCollection = db.collection('guildConfigs');
-    
+
     // Check if the guild already exists in the database
     const existingConfig = await guildConfigsCollection.findOne({ guildId: guild.id });
-    
+
     if (existingConfig) {
       // If the guild already exists, just update it and set it as active
       await guildConfigsCollection.updateOne(
         { guildId: guild.id },
-        { 
-          $set: { 
+        {
+          $set: {
             guildName: guild.name, // Update the guild name
             memberCount: guild.memberCount, // Update member count
             updatedAt: new Date(),
-            active: true  // In case it was previously marked inactive
-          } 
-        }
+            active: true, // In case it was previously marked inactive
+          },
+        },
       );
       logger.info(`Updated existing guild in database: ${guild.name} (${guild.id})`);
     } else {
@@ -39,9 +39,9 @@ export async function guildCreate(guild: Guild): Promise<void> {
         moderationRoles: [],
         active: true,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
-      
+
       // Insert the new guild config
       await guildConfigsCollection.insertOne(newGuildConfig);
       logger.info(`Added new guild to database: ${guild.name} (${guild.id})`);
