@@ -9,6 +9,14 @@ const dbName = process.env.DB_NAME || 'twinspire-bot';
 let client: MongoClient | null = null;
 let db: Db | null = null;
 
+// Guild affiliation interface
+export interface GuildAffiliation {
+  guildId: string;
+  joinedAt: Date;
+  nickname?: string;
+  roles: string[]; // Array of role IDs
+}
+
 // User interfaces
 // Base user interface without _id (for creating new users)
 export interface UserData {
@@ -18,6 +26,7 @@ export interface UserData {
   lastActive: Date;
   experience: number;
   level: number;
+  guilds: GuildAffiliation[];
 }
 
 // User interface with MongoDB _id field
@@ -38,11 +47,11 @@ export async function connectToDatabase(): Promise<Db> {
       throw error;
     }
   }
-
+  
   if (!db) {
     throw new Error('Database connection failed');
   }
-
+  
   return db;
 }
 
@@ -58,20 +67,20 @@ export async function getUsersCollection(): Promise<Collection<UserData>> {
 // Create user
 export async function createUser(userData: UserData): Promise<User> {
   const usersCollection = await getUsersCollection();
-
-  const result = await usersCollection.insertOne(userData);
-
+  
+  const result = await usersCollection.insertOne(userData as any);
+  
   if (!result.acknowledged) {
     throw new Error('Failed to create user in database');
   }
-
+  
   // Fetch the newly created user with its _id
   const newUser = await usersCollection.findOne({ _id: result.insertedId });
-
+  
   if (!newUser) {
     throw new Error('Failed to retrieve the created user');
   }
-
+  
   // Cast to User to include the _id field
   return { ...newUser, _id: result.insertedId } as User;
 }

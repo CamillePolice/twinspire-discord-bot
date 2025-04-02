@@ -2,6 +2,7 @@ import { Client } from 'discord.js';
 import { loadCommands, registerCommands } from '../commands';
 import { syncGuildsWithDatabase } from '../guilds/syncGuilds';
 import { logger } from '../utils/logger';
+import { syncAllGuildMembers } from '../guilds/syncGuildMembers';
 
 export async function ready(client: Client): Promise<void> {
   if (!client.user) {
@@ -20,6 +21,9 @@ export async function ready(client: Client): Promise<void> {
 
     // Sync guilds with database
     await syncGuildsWithDatabase(client);
+
+    // Sync all members from all guilds with database
+    await syncAllGuildMembers(client);
 
     // Log guild information
     logger.info(`Bot is in ${client.guilds.cache.size} guilds`);

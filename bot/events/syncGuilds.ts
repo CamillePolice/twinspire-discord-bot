@@ -1,5 +1,5 @@
 import { Client } from 'discord.js';
-import { connectToDatabase } from '../database/connection';
+import { getDatabase } from '../database/connection';
 import { logger } from '../utils/logger';
 
 /**
@@ -14,7 +14,7 @@ export async function syncGuildsWithDatabase(client: Client): Promise<void> {
     const guilds = client.guilds.cache;
 
     // Connect to the database
-    const db = await connectToDatabase();
+    const db = getDatabase();
     const guildConfigsCollection = db.collection('guildConfigs');
 
     // Log the number of guilds found
