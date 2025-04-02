@@ -47,11 +47,11 @@ export async function connectToDatabase(): Promise<Db> {
       throw error;
     }
   }
-  
+
   if (!db) {
     throw new Error('Database connection failed');
   }
-  
+
   return db;
 }
 
@@ -67,20 +67,20 @@ export async function getUsersCollection(): Promise<Collection<UserData>> {
 // Create user
 export async function createUser(userData: UserData): Promise<User> {
   const usersCollection = await getUsersCollection();
-  
-  const result = await usersCollection.insertOne(userData as any);
-  
+
+  const result = await usersCollection.insertOne(userData);
+
   if (!result.acknowledged) {
     throw new Error('Failed to create user in database');
   }
-  
+
   // Fetch the newly created user with its _id
   const newUser = await usersCollection.findOne({ _id: result.insertedId });
-  
+
   if (!newUser) {
     throw new Error('Failed to retrieve the created user');
   }
-  
+
   // Cast to User to include the _id field
   return { ...newUser, _id: result.insertedId } as User;
 }

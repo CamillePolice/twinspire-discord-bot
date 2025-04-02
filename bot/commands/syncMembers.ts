@@ -1,4 +1,9 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder, PermissionFlagsBits, CacheType } from 'discord.js';
+import {
+  ChatInputCommandInteraction,
+  SlashCommandBuilder,
+  PermissionFlagsBits,
+  CacheType,
+} from 'discord.js';
 import { syncGuildMembers } from '../guilds/syncGuildMembers';
 import { logger } from '../utils/logger';
 
@@ -14,7 +19,7 @@ export default {
     if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
       await interaction.reply({
         content: 'You need Administrator permission to use this command.',
-        ephemeral: true
+        ephemeral: true,
       });
       return;
     }
@@ -24,28 +29,35 @@ export default {
 
     try {
       // Log the command usage
-      logger.info(`User ${interaction.user.tag} triggered syncmembers in guild ${interaction.guild?.name} (${interaction.guild?.id})`);
-      
+      logger.info(
+        `User ${interaction.user.tag} triggered syncmembers in guild ${interaction.guild?.name} (${interaction.guild?.id})`,
+      );
+
       if (!interaction.guild) {
         await interaction.editReply('This command can only be used in a server.');
         return;
       }
 
       // Start the sync process
-      await interaction.editReply('Starting member synchronization. This may take a while for large servers...');
-      
+      await interaction.editReply(
+        'Starting member synchronization. This may take a while for large servers...',
+      );
+
       // Get the member count for logging purposes
       const memberCount = interaction.guild.memberCount;
-      
+
       // Call the sync function
       await syncGuildMembers(interaction.guild);
-      
+
       // Respond with success
-      await interaction.editReply(`Successfully synchronized ${memberCount} members to the database!`);
-      
+      await interaction.editReply(
+        `Successfully synchronized ${memberCount} members to the database!`,
+      );
     } catch (error) {
       logger.error('Error executing syncmembers command:', error as Error);
-      await interaction.editReply('There was an error synchronizing members. Please check the logs for more information.');
+      await interaction.editReply(
+        'There was an error synchronizing members. Please check the logs for more information.',
+      );
     }
   },
 };

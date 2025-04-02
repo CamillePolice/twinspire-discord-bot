@@ -17,6 +17,6 @@ export function registerEvents(client: Client): void {
   client.on('guildDelete', guildDelete);
   client.on('guildMemberAdd', guildMemberAdd);
   client.on('guildMemberUpdate', guildMemberUpdate);
-  
+
   logger.info('Event handlers registered');
 }
