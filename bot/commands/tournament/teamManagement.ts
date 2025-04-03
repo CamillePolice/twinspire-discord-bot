@@ -68,12 +68,12 @@ export async function handleViewTeam(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
 
   try {
-    const teamId = interaction.options.getString('team_id');
+    const teamName = interaction.options.getString('team_name');
 
-    // If no team ID is provided, try to find a team that includes the user
+    // If no team name is provided, try to find a team that includes the user
     let team: Team | null = null;
 
-    if (!teamId) {
+    if (!teamName) {
       const teams = await tournamentService.getTournamentStandings();
       team =
         teams.find(
@@ -84,14 +84,16 @@ export async function handleViewTeam(interaction: ChatInputCommandInteraction) {
 
       if (!team) {
         await interaction.editReply(
-          'You are not a member of any team. Please provide a team ID or join a team first.',
+          'You are not a member of any team. Please provide a team name or join a team first.',
         );
         return;
       }
     } else {
-      team = await tournamentService.getTeamById(teamId);
+      const teams = await tournamentService.getTournamentStandings();
+      team = teams.find(t => t.name.toLowerCase() === teamName.toLowerCase()) || null;
+
       if (!team) {
-        await interaction.editReply(`Team with ID ${teamId} not found.`);
+        await interaction.editReply(`Team "${teamName}" not found.`);
         return;
       }
     }
@@ -318,9 +320,7 @@ export async function handleUpdateMember(interaction: ChatInputCommandInteractio
 
     // Cannot update the captain's role
     if (user.id === interaction.user.id) {
-      await interaction.editReply(
-        'You cannot update your own role as you are the captain.',
-      );
+      await interaction.editReply('You cannot update your own role as you are the captain.');
       return;
     }
 
