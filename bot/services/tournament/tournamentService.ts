@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getDatabase } from '../../database/connection';
 import { logger } from '../../utils/logger';
-import { Tournament, Team, Challenge, TeamMember } from '../../database/models/tournament';
+import { Tournament, Team, Challenge, TeamMember, TeamTournament } from '../../database/models/tournament';
 
 declare module 'uuid';
 /**
@@ -11,12 +11,14 @@ export class TournamentService {
   private tournamentsCollection;
   private teamsCollection;
   private challengesCollection;
+  private teamTournamentsCollection;
 
   constructor() {
     const db = getDatabase();
     this.tournamentsCollection = db.collection<Tournament>('tournaments');
     this.teamsCollection = db.collection<Team>('teams');
     this.challengesCollection = db.collection<Challenge>('challenges');
+    this.teamTournamentsCollection = db.collection<TeamTournament>('team_tournaments');
   }
 
   /**
@@ -98,28 +100,12 @@ export class TournamentService {
    * Create a new team
    */
   async createTeam(
-    teamData: Omit<
-      Team,
-      | '_id'
-      | 'teamId'
-      | 'tier'
-      | 'prestige'
-      | 'wins'
-      | 'losses'
-      | 'winStreak'
-      | 'createdAt'
-      | 'updatedAt'
-    >,
+    teamData: Omit<Team, '_id' | 'teamId' | 'createdAt' | 'updatedAt'>,
   ): Promise<Team> {
     try {
       const team: Team = {
         ...teamData,
         teamId: uuidv4(),
-        tier: 5, // All teams start at the lowest tier (5)
-        prestige: 0,
-        wins: 0,
-        losses: 0,
-        winStreak: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -147,9 +133,9 @@ export class TournamentService {
   }
 
   /**
-   * Get teams by tier
+   * Get teams by tier across all tournaments
    */
-  async getTeamsByTier(tier: number): Promise<Team[]> {
+  async getTeamsByTierInAllTournaments(tier: number): Promise<Team[]> {
     try {
       return await this.teamsCollection.find({ tier }).toArray();
     } catch (error) {
@@ -209,29 +195,29 @@ export class TournamentService {
     tournamentId: string,
   ): Promise<Challenge | null> {
     try {
-      // Get both teams
-      const challengerTeam = await this.getTeamById(challengerTeamId);
-      const defendingTeam = await this.getTeamById(defendingTeamId);
+      // Get both teams' tournament stats
+      const challengerStats = await this.getTeamTournamentStats(challengerTeamId, tournamentId);
+      const defendingStats = await this.getTeamTournamentStats(defendingTeamId, tournamentId);
 
-      if (!challengerTeam || !defendingTeam) {
+      if (!challengerStats || !defendingStats) {
         logger.error(
-          `One of the teams doesn't exist: Challenger: ${challengerTeamId}, Defending: ${defendingTeamId}`,
+          `One of the teams doesn't exist in tournament: Challenger: ${challengerTeamId}, Defending: ${defendingTeamId}`,
         );
         return null;
       }
 
       // Verify tiers are adjacent
-      if (challengerTeam.tier !== defendingTeam.tier + 1) {
+      if (challengerStats.tier !== defendingStats.tier + 1) {
         logger.error(
-          `Cannot challenge: Tiers are not adjacent. Challenger: ${challengerTeam.tier}, Defending: ${defendingTeam.tier}`,
+          `Cannot challenge: Tiers are not adjacent. Challenger: ${challengerStats.tier}, Defending: ${defendingStats.tier}`,
         );
         return null;
       }
 
       // Check if defending team is protected
-      if (defendingTeam.protectedUntil && defendingTeam.protectedUntil > new Date()) {
+      if (defendingStats.protectedUntil && defendingStats.protectedUntil > new Date()) {
         logger.error(
-          `Cannot challenge: Defending team is protected until ${defendingTeam.protectedUntil}`,
+          `Cannot challenge: Defending team is protected until ${defendingStats.protectedUntil}`,
         );
         return null;
       }
@@ -280,8 +266,8 @@ export class TournamentService {
         defendingTeamId,
         status: 'pending',
         tierBefore: {
-          challenger: challengerTeam.tier,
-          defending: defendingTeam.tier,
+          challenger: challengerStats.tier,
+          defending: defendingStats.tier,
         },
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -398,11 +384,11 @@ export class TournamentService {
         return false;
       }
 
-      const challengerTeam = await this.getTeamById(challenge.challengerTeamId);
-      const defendingTeam = await this.getTeamById(challenge.defendingTeamId);
+      const challengerStats = await this.getTeamTournamentStats(challenge.challengerTeamId, tournamentId);
+      const defendingStats = await this.getTeamTournamentStats(challenge.defendingTeamId, tournamentId);
 
-      if (!challengerTeam || !defendingTeam) {
-        logger.error(`One of the teams doesn't exist`);
+      if (!challengerStats || !defendingStats) {
+        logger.error(`One of the teams doesn't exist in tournament`);
         return false;
       }
 
@@ -412,22 +398,22 @@ export class TournamentService {
 
       // Swap tiers if challenger won
       const tierAfter = {
-        challenger: challengerTeam.tier,
-        defending: defendingTeam.tier,
+        challenger: challengerStats.tier,
+        defending: defendingStats.tier,
       };
 
       // Determine prestige points and update tiers
       if (winnerTeamId === challenge.challengerTeamId) {
         // Challenger wins and moves up
-        challengerPrestige = 100 + challengerTeam.winStreak * 10;
+        challengerPrestige = 100 + challengerStats.winStreak * 10;
         defendingPrestige = 10; // Consolation points for playing
 
         // Swap tiers
-        tierAfter.challenger = defendingTeam.tier;
-        tierAfter.defending = challengerTeam.tier;
+        tierAfter.challenger = defendingStats.tier;
+        tierAfter.defending = challengerStats.tier;
       } else {
         // Defender successfully defends
-        defendingPrestige = 50 + defendingTeam.winStreak * 10;
+        defendingPrestige = 50 + defendingStats.winStreak * 10;
         challengerPrestige = 25; // Points for attempting a challenge
       }
 
@@ -457,21 +443,15 @@ export class TournamentService {
         return false;
       }
 
-      // Update the challenger team
-      let challengerWinStreak = challengerTeam.winStreak;
-      let challengerTier = challengerTeam.tier;
-
+      // Update the challenger team's tournament stats
       if (winnerTeamId === challenge.challengerTeamId) {
         // Challenger won
-        challengerWinStreak++;
-        challengerTier = defendingTeam.tier; // Move up to defender's tier
-
-        await this.teamsCollection.updateOne(
-          { teamId: challenge.challengerTeamId },
+        await this.teamTournamentsCollection.updateOne(
+          { teamId: challenge.challengerTeamId, tournamentId },
           {
             $set: {
-              tier: challengerTier,
-              winStreak: challengerWinStreak,
+              tier: defendingStats.tier,
+              winStreak: challengerStats.winStreak + 1,
               updatedAt: new Date(),
             },
             $inc: {
@@ -482,8 +462,8 @@ export class TournamentService {
         );
       } else {
         // Challenger lost
-        await this.teamsCollection.updateOne(
-          { teamId: challenge.challengerTeamId },
+        await this.teamTournamentsCollection.updateOne(
+          { teamId: challenge.challengerTeamId, tournamentId },
           {
             $set: {
               winStreak: 0,
@@ -497,25 +477,18 @@ export class TournamentService {
         );
       }
 
-      // Update the defending team
-      let defendingWinStreak = defendingTeam.winStreak;
-      let defendingTier = defendingTeam.tier;
-      let protectedUntil = undefined;
-
+      // Update the defending team's tournament stats
       if (winnerTeamId === challenge.defendingTeamId) {
         // Defender won
-        defendingWinStreak++;
-
-        // Set protection period
         const protectionDays = tournament.rules.protectionDaysAfterDefense;
-        protectedUntil = new Date();
+        const protectedUntil = new Date();
         protectedUntil.setDate(protectedUntil.getDate() + protectionDays);
 
-        await this.teamsCollection.updateOne(
-          { teamId: challenge.defendingTeamId },
+        await this.teamTournamentsCollection.updateOne(
+          { teamId: challenge.defendingTeamId, tournamentId },
           {
             $set: {
-              winStreak: defendingWinStreak,
+              winStreak: defendingStats.winStreak + 1,
               protectedUntil,
               updatedAt: new Date(),
             },
@@ -527,13 +500,11 @@ export class TournamentService {
         );
       } else {
         // Defender lost
-        defendingTier = challengerTeam.tier; // Move down to challenger's tier
-
-        await this.teamsCollection.updateOne(
-          { teamId: challenge.defendingTeamId },
+        await this.teamTournamentsCollection.updateOne(
+          { teamId: challenge.defendingTeamId, tournamentId },
           {
             $set: {
-              tier: defendingTier,
+              tier: challengerStats.tier,
               winStreak: 0,
               updatedAt: new Date(),
             },
@@ -556,13 +527,35 @@ export class TournamentService {
   }
 
   /**
-   * Get tournament standings (teams sorted by tier and prestige)
+   * Get tournament standings
    */
-  async getTournamentStandings(): Promise<Team[]> {
+  async getTournamentStandings(tournamentId: string): Promise<TeamTournament[]> {
     try {
-      return await this.teamsCollection.find().sort({ tier: 1, prestige: -1 }).toArray();
+      const standings = await this.teamTournamentsCollection
+        .find({ tournamentId })
+        .sort({ tier: 1, prestige: -1 })
+        .toArray();
+
+      return standings;
     } catch (error) {
-      logger.error('Error fetching tournament standings:', error as Error);
+      logger.error(`Error getting tournament standings for ${tournamentId}:`, error as Error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get teams by tier in a tournament
+   */
+  async getTeamsByTier(tournamentId: string, tier: number): Promise<TeamTournament[]> {
+    try {
+      const teams = await this.teamTournamentsCollection
+        .find({ tournamentId, tier })
+        .sort({ prestige: -1 })
+        .toArray();
+
+      return teams;
+    } catch (error) {
+      logger.error(`Error getting teams for tier ${tier} in tournament ${tournamentId}:`, error as Error);
       throw error;
     }
   }
@@ -642,12 +635,13 @@ export class TournamentService {
    * Update a team member's role
    */
   async updateTeamMemberRole(teamId: string, discordId: string, role: string): Promise<boolean> {
+    console.log(`LOG || updateTeamMemberRole || role ->`, role)
     try {
       const result = await this.teamsCollection.updateOne(
         { teamId, 'members.discordId': discordId },
         {
           $set: {
-            'members.$.role': role,
+            'members.$.role': role.toUpperCase(),
             updatedAt: new Date(),
           },
         },
@@ -657,6 +651,200 @@ export class TournamentService {
       return result.modifiedCount > 0;
     } catch (error) {
       logger.error(`Error updating member role in team ${teamId}:`, error as Error);
+      throw error;
+    }
+  }
+
+  /**
+   * Transfer captain role to another team member
+   */
+  async transferCaptainRole(teamId: string, newCaptainId: string): Promise<boolean> {
+    try {
+      const team = await this.getTeamById(teamId);
+      if (!team) {
+        logger.error(`Team ${teamId} not found`);
+        return false;
+      }
+
+      // Verify the new captain is a member of the team
+      const isMember = team.members.some(member => member.discordId === newCaptainId);
+      if (!isMember) {
+        logger.error(`User ${newCaptainId} is not a member of team ${teamId}`);
+        return false;
+      }
+
+      // Update the captain ID and isCaptain flags
+      const result = await this.teamsCollection.updateOne(
+        { teamId },
+        {
+          $set: {
+            captainId: newCaptainId,
+            updatedAt: new Date(),
+            'members.$[elem].isCaptain': true,
+          },
+          $unset: {
+            'members.$[].isCaptain': 1,
+          },
+        },
+        {
+          arrayFilters: [{ 'elem.discordId': newCaptainId }],
+        },
+      );
+
+      logger.info(`Transferred captain role in team ${teamId} to ${newCaptainId}`);
+      return result.modifiedCount > 0;
+    } catch (error) {
+      logger.error(`Error transferring captain role in team ${teamId}:`, error as Error);
+      throw error;
+    }
+  }
+
+  /**
+   * Add a team to a tournament
+   */
+  async addTeamToTournament(teamId: string, tournamentId: string): Promise<boolean> {
+    try {
+      // Check if team exists
+      const team = await this.getTeamById(teamId);
+      if (!team) {
+        logger.error(`Team ${teamId} not found`);
+        return false;
+      }
+
+      // Check if tournament exists
+      const tournament = await this.getTournamentById(tournamentId);
+      if (!tournament) {
+        logger.error(`Tournament ${tournamentId} not found`);
+        return false;
+      }
+
+      // Check if team is already in this tournament
+      const existingAssociation = await this.teamTournamentsCollection.findOne({
+        teamId,
+        tournamentId,
+      });
+
+      if (existingAssociation) {
+        logger.error(`Team ${teamId} is already in tournament ${tournamentId}`);
+        return false;
+      }
+
+      // Create team-tournament association
+      const teamTournament: TeamTournament = {
+        teamId,
+        tournamentId,
+        tier: 5, // Start at lowest tier
+        prestige: 0,
+        wins: 0,
+        losses: 0,
+        winStreak: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const result = await this.teamTournamentsCollection.insertOne(teamTournament);
+      logger.info(`Added team ${teamId} to tournament ${tournamentId}`);
+      return result.insertedId !== undefined;
+    } catch (error) {
+      logger.error(`Error adding team ${teamId} to tournament ${tournamentId}:`, error as Error);
+      throw error;
+    }
+  }
+
+  /**
+   * Remove a team from a tournament
+   */
+  async removeTeamFromTournament(teamId: string, tournamentId: string): Promise<boolean> {
+    try {
+      // Check if team exists
+      const team = await this.getTeamById(teamId);
+      if (!team) {
+        logger.error(`Team ${teamId} not found`);
+        return false;
+      }
+
+      // Check if tournament exists
+      const tournament = await this.getTournamentById(tournamentId);
+      if (!tournament) {
+        logger.error(`Tournament ${tournamentId} not found`);
+        return false;
+      }
+
+      // Check if team is in this tournament
+      const existingAssociation = await this.teamTournamentsCollection.findOne({
+        teamId,
+        tournamentId,
+      });
+
+      if (!existingAssociation) {
+        logger.error(`Team ${teamId} is not in tournament ${tournamentId}`);
+        return false;
+      }
+
+      // Remove team from tournament
+      const result = await this.teamTournamentsCollection.deleteOne({
+        teamId,
+        tournamentId,
+      });
+
+      logger.info(`Removed team ${teamId} from tournament ${tournamentId}`);
+      return result.deletedCount > 0;
+    } catch (error) {
+      logger.error(`Error removing team ${teamId} from tournament ${tournamentId}:`, error as Error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get teams in a tournament
+   */
+  async getTeamsInTournament(tournamentId: string): Promise<Team[]> {
+    try {
+      const associations = await this.teamTournamentsCollection
+        .find({ tournamentId })
+        .toArray();
+
+      const teamIds = associations.map(assoc => assoc.teamId);
+      return await this.teamsCollection.find({ teamId: { $in: teamIds } }).toArray();
+    } catch (error) {
+      logger.error(`Error fetching teams in tournament ${tournamentId}:`, error as Error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get tournaments a team is in
+   */
+  async getTeamTournaments(teamId: string): Promise<Tournament[]> {
+    try {
+      const associations = await this.teamTournamentsCollection
+        .find({ teamId })
+        .toArray();
+
+      const tournamentIds = associations.map(assoc => assoc.tournamentId);
+      return await this.tournamentsCollection
+        .find({ tournamentId: { $in: tournamentIds } })
+        .toArray();
+    } catch (error) {
+      logger.error(`Error fetching tournaments for team ${teamId}:`, error as Error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get team's stats in a specific tournament
+   */
+  async getTeamTournamentStats(teamId: string, tournamentId: string): Promise<TeamTournament | null> {
+    try {
+      return await this.teamTournamentsCollection.findOne({
+        teamId,
+        tournamentId,
+      });
+    } catch (error) {
+      logger.error(
+        `Error fetching tournament stats for team ${teamId} in tournament ${tournamentId}:`,
+        error as Error,
+      );
       throw error;
     }
   }
