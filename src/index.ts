@@ -68,8 +68,8 @@ client.once(Events.ClientReady, async readyClient => {
   }
 })();
 
-import beerListener from './events/beer'; 
+import eventListener from './events/event'; 
 
 client.on(Events.MessageCreate, async message => {
-  await beerListener.execute(message);
+  await eventListener.execute(message);
 });
