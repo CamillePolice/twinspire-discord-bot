@@ -15,19 +15,21 @@ export interface Command {
 // Initialize commands collection
 export const commands = new Collection<string, Command>();
 
-// Load commands from files
-export const loadCommands = async () => {
-  const commandsPath = path.join(__dirname);
+// Recursively find command files in a directory
+const findCommandFiles = (dir: string): string[] => {
+  const commandFiles: string[] = [];
+  const files = fs.readdirSync(dir);
 
-  // Create commands directory if it doesn't exist
-  if (!fs.existsSync(commandsPath)) {
-    fs.mkdirSync(commandsPath, { recursive: true });
-  }
+  for (const file of files) {
+    const filePath = path.join(dir, file);
+    const stat = fs.statSync(filePath);
 
-  const commandFiles = fs
-    .readdirSync(commandsPath)
-    .filter(
-      file =>
+    if (stat.isDirectory()) {
+      // Recursively search subdirectories
+      commandFiles.push(...findCommandFiles(filePath));
+    } else {
+      // Filter for command files
+      if (
         (file.endsWith('.js') ||
           (process.env.NODE_ENV === 'development' && file.endsWith('.ts'))) &&
         !file.endsWith('index.js') &&
@@ -35,11 +37,30 @@ export const loadCommands = async () => {
         !file.endsWith('.test.js') &&
         !file.endsWith('.test.ts') &&
         !file.endsWith('.spec.js') &&
-        !file.endsWith('.spec.ts'),
-    );
+        !file.endsWith('.spec.ts')
+      ) {
+        commandFiles.push(filePath);
+      }
+    }
+  }
 
-  for (const file of commandFiles) {
-    const filePath = path.join(commandsPath, file);
+  return commandFiles;
+};
+
+// Load commands from files
+export const loadCommands = async () => {
+  const commandsPath = path.join(__dirname, '..', 'commands');
+  console.log(`LOG || loadCommands || commandsPath ->`, commandsPath);
+
+  // Create commands directory if it doesn't exist
+  if (!fs.existsSync(commandsPath)) {
+    fs.mkdirSync(commandsPath, { recursive: true });
+  }
+
+  // Find all command files recursively
+  const commandFiles = findCommandFiles(commandsPath);
+
+  for (const filePath of commandFiles) {
     try {
       // Import the command module - for CommonJS we would use require
       // For ESM, we need to handle this differently based on the environment
@@ -50,7 +71,9 @@ export const loadCommands = async () => {
 
       if (commandModule && 'data' in commandModule && 'execute' in commandModule) {
         commands.set(commandModule.data.name, commandModule);
-        console.log(`Loaded command: ${commandModule.data.name}`);
+        console.log(
+          `Loaded command: ${commandModule.data.name} from ${path.relative(commandsPath, filePath)}`,
+        );
       } else {
         console.warn(`Command at ${filePath} is missing required "data" or "execute" property.`);
       }

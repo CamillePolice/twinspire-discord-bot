@@ -1,8 +1,12 @@
+// Update to src/events/ready.ts
+
 import { Client } from 'discord.js';
 import { loadCommands, registerCommands } from '../commands';
 import { syncGuildsWithDatabase } from '../guilds/syncGuilds';
 import { logger } from '../utils/logger';
 import { syncAllGuildMembers } from '../guilds/syncGuildMembers';
+import { TournamentMaintenanceScheduler } from '../schedulers/tournamentMaintenance';
+import { setMaintenanceScheduler } from '../commands/tournament/maintenance/maintenance';
 
 export async function ready(client: Client): Promise<void> {
   if (!client.user) {
@@ -24,6 +28,14 @@ export async function ready(client: Client): Promise<void> {
 
     // Sync all members from all guilds with database
     await syncAllGuildMembers(client);
+
+    // Initialize and start tournament maintenance scheduler
+    const maintenanceScheduler = new TournamentMaintenanceScheduler(client);
+    maintenanceScheduler.start();
+
+    // Store reference to scheduler for command access
+    setMaintenanceScheduler(maintenanceScheduler);
+    logger.info('Tournament maintenance scheduler initialized');
 
     // Log guild information
     logger.info(`Bot is in ${client.guilds.cache.size} guilds`);
