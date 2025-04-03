@@ -1,10 +1,26 @@
 import { ObjectId } from 'mongodb';
 
+export enum Role {
+  TOP = 'TOP',
+  JUNGLE = 'JGL',
+  MID = 'MID',
+  ADC = 'ADC',
+  SUPPORT = 'SUP',
+  FILL = 'FILL',
+}
+
+export enum TournamentFormat {
+  BO1 = 'BO1',
+  BO3 = 'BO3',
+  BO5 = 'BO5',
+}
+
 // Team member interface
 export interface TeamMember {
   discordId: string;
   username: string;
-  role?: string; // Optional role within team (e.g. "Top", "Jungle", etc.)
+  role?: Role;
+  isCaptain: boolean; // Whether this member is the team captain
 }
 
 // Team interface
@@ -14,12 +30,21 @@ export interface Team {
   name: string;
   captainId: string; // Discord ID of the team captain
   members: TeamMember[];
-  tier: number; // Current tier in the tournament (1 = highest, 5 = lowest)
-  prestige: number; // Prestige points accumulated
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Team-Tournament association interface
+export interface TeamTournament {
+  _id?: ObjectId;
+  teamId: string;
+  tournamentId: string;
+  tier: number; // Team's tier in this specific tournament (1 = highest, 5 = lowest)
+  prestige: number; // Team's prestige in this specific tournament
   wins: number;
   losses: number;
-  winStreak: number; // Current winning streak
-  protectedUntil?: Date; // Date until team is protected from challenges
+  winStreak: number; // Current winning streak in this tournament
+  protectedUntil?: Date; // Date until team is protected from challenges in this tournament
   createdAt: Date;
   updatedAt: Date;
 }
@@ -66,7 +91,7 @@ export interface Tournament {
   name: string;
   description?: string;
   game: string; // e.g. "League of Legends"
-  format: string; // e.g. "BO3", "BO5"
+  format: TournamentFormat; // e.g. "BO3", "BO5"
   maxTiers: number; // Maximum number of tiers in the tournament
   tierLimits: number[]; // Array of team limits per tier, e.g. [1, 2, 4, 8, 16]
   startDate: Date;

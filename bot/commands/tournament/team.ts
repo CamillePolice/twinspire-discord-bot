@@ -6,6 +6,7 @@ import {
   handleAddMember,
   handleRemoveMember,
   handleUpdateMember,
+  handleTransferCaptain,
 } from './teamManagement';
 import {
   handleChallenge,
@@ -34,8 +35,8 @@ export default {
         .setDescription('View team details')
         .addStringOption(option =>
           option
-            .setName('team_id')
-            .setDescription('Team ID')
+            .setName('team_name')
+            .setDescription('Team Name')
             .setRequired(false)
             .setAutocomplete(true),
         ),
@@ -77,6 +78,15 @@ export default {
             .setName('role')
             .setDescription('New role within the team (e.g., Top, Jungle, Mid, ADC, Support)')
             .setRequired(true),
+        ),
+    )
+    // Transfer captain role
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('transfer_captain')
+        .setDescription('Transfer the captain role to another team member')
+        .addUserOption(option =>
+          option.setName('user').setDescription('User to transfer captain role to').setRequired(true),
         ),
     )
     // Challenge another team
@@ -138,15 +148,15 @@ export default {
         .addStringOption(option =>
           option
             .setName('date')
-            .setDescription('Date to schedule (YYYY-MM-DD HH:MM)')
+            .setDescription('Scheduled date (YYYY-MM-DD HH:MM)')
             .setRequired(true),
         ),
     )
-    // Submit a match result
+    // Submit challenge result
     .addSubcommand(subcommand =>
       subcommand
-        .setName('result')
-        .setDescription('Submit a match result')
+        .setName('submit_result')
+        .setDescription('Submit the result of a challenge')
         .addStringOption(option =>
           option
             .setName('challenge_id')
@@ -157,10 +167,10 @@ export default {
         .addStringOption(option =>
           option
             .setName('winner')
-            .setDescription('Winner of the match')
+            .setDescription('Winner of the challenge')
             .setRequired(true)
             .addChoices(
-              { name: 'Our Team', value: 'challenger' },
+              { name: 'Your Team', value: 'challenger' },
               { name: 'Opponent Team', value: 'defending' },
             ),
         )
@@ -189,6 +199,9 @@ export default {
         case 'update_member':
           await handleUpdateMember(interaction);
           break;
+        case 'transfer_captain':
+          await handleTransferCaptain(interaction);
+          break;
         case 'challenge':
           await handleChallenge(interaction);
           break;
@@ -198,7 +211,7 @@ export default {
         case 'schedule':
           await handleScheduleChallenge(interaction);
           break;
-        case 'result':
+        case 'submit_result':
           await handleSubmitResult(interaction);
           break;
         default:

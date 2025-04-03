@@ -2,7 +2,7 @@
 import { ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
 import { TournamentService } from '../../services/tournament/tournamentService';
 import { logger } from '../../utils/logger';
-import { Team, TeamMember } from '../../database/models/tournament';
+import { Team, TeamMember, Role } from '../../database/models/tournament';
 
 const tournamentService = new TournamentService();
 
@@ -36,7 +36,8 @@ export async function handleCreateTeam(interaction: ChatInputCommandInteraction)
         {
           discordId: captainId,
           username: captainUsername,
-          role: 'Captain',
+          role: Role.TOP,
+          isCaptain: true,
         },
       ],
     });
@@ -79,7 +80,7 @@ export async function handleViewTeam(interaction: ChatInputCommandInteraction) {
         teams.find(
           t =>
             t.captainId === interaction.user.id ||
-            t.members.some((m: TeamMember) => m.discordId === interaction.user.id),
+            t.members.some(m => m.discordId === interaction.user.id),
         ) || null;
 
       if (!team) {
@@ -98,27 +99,58 @@ export async function handleViewTeam(interaction: ChatInputCommandInteraction) {
       }
     }
 
-    // Create members list
-    const membersList = team.members
-      .map((member: any) => {
-        const roleText = member.role ? ` (${member.role})` : '';
-        return `• <@${member.discordId}>${roleText}`;
+    // Create members list grouped by role
+    const membersByRole = new Map<Role, TeamMember[]>();
+    const unassignedMembers: TeamMember[] = [];
+
+    team.members.forEach(member => {
+      if (member.role && Object.values(Role).includes(member.role)) {
+        if (!membersByRole.has(member.role)) {
+          membersByRole.set(member.role, []);
+        }
+        membersByRole.get(member.role)?.push(member);
+      } else {
+        unassignedMembers.push(member);
+      }
+    });
+
+    // Build members list text
+    let membersListText = Array.from(membersByRole.entries())
+      .map(([role, members]) => {
+        const roleMembers = members.map(member => {
+          return `• <@${member.discordId}>${member.isCaptain ? ' (Captain)' : ''}`;
+        }).join('\n');
+        const roleIcon = {
+          [Role.TOP]: '⚔️',
+          [Role.JUNGLE]: '🌳',
+          [Role.MID]: '🎯',
+          [Role.ADC]: '🏹',
+          [Role.SUPPORT]: '🛡️',
+          [Role.FILL]: '🔄',
+        }[role];
+        return `${roleIcon} **${role}**\n${roleMembers}`;
       })
-      .join('\n');
+      .join('\n\n');
+
+    if (unassignedMembers.length > 0) {
+      const unassignedList = unassignedMembers.map(member => {
+        return `• <@${member.discordId}>${member.isCaptain ? ' (Captain)' : ''}`;
+      }).join('\n');
+      membersListText += `\n\n❓ **Unassigned**\n${unassignedList}`;
+    }
 
     // Get team's tier info
     const tierTeams = await tournamentService.getTeamsByTier(team.tier);
     const tierPosition =
-      tierTeams.sort((a, b) => b.prestige - a.prestige).findIndex(t => t.teamId === team!.teamId) +
-      1;
+      tierTeams.sort((a, b) => b.prestige - a.prestige).findIndex(t => t.teamId === team!.teamId) + 1;
 
     const embed = new EmbedBuilder()
       .setColor('#0099ff')
       .setTitle(`Team: ${team.name}`)
       .addFields(
         { name: 'Team ID', value: team.teamId, inline: false },
-        { name: 'Captain', value: `<@${team.captainId}>`, inline: true },
-        { name: 'Members', value: membersList || 'No members', inline: false },
+        { name: '👑 Captain', value: `<@${team.captainId}>`, inline: true },
+        { name: 'Members', value: membersListText || 'No members', inline: false },
         { name: 'Tier', value: team.tier.toString(), inline: true },
         { name: 'Tier Position', value: `${tierPosition}/${tierTeams.length}`, inline: true },
         { name: 'Prestige', value: team.prestige.toString(), inline: true },
@@ -183,7 +215,19 @@ export async function handleAddMember(interaction: ChatInputCommandInteraction) 
 
   try {
     const user = interaction.options.getUser('user', true);
-    const role = interaction.options.getString('role');
+    const roleStr = interaction.options.getString('role');
+
+    // Validate role if provided
+    let role: Role | undefined;
+    if (roleStr) {
+      if (!Object.values(Role).includes(roleStr as Role)) {
+        await interaction.editReply(
+          `Invalid role. Please choose one of: ${Object.values(Role).join(', ')}`,
+        );
+        return;
+      }
+      role = roleStr as Role;
+    }
 
     // Check if the command user is a team captain
     const teams = await tournamentService.getTournamentStandings();
@@ -221,7 +265,8 @@ export async function handleAddMember(interaction: ChatInputCommandInteraction) 
     const member: TeamMember = {
       discordId: user.id,
       username: user.username,
-      role: role || undefined,
+      role,
+      isCaptain: false,
     };
 
     const success = await tournamentService.addTeamMember(captainTeam.teamId, member);
@@ -298,7 +343,16 @@ export async function handleUpdateMember(interaction: ChatInputCommandInteractio
 
   try {
     const user = interaction.options.getUser('user', true);
-    const role = interaction.options.getString('role', true);
+    const roleStr = interaction.options.getString('role', true).toUpperCase();
+
+    // Validate role
+    if (!Object.values(Role).includes(roleStr as Role)) {
+      await interaction.editReply(
+        `Invalid role. Please choose one of: ${Object.values(Role).join(', ')}`,
+      );
+      return;
+    }
+    const role = roleStr as Role;
 
     // Check if the command user is a team captain
     const teams = await tournamentService.getTournamentStandings();
@@ -318,12 +372,6 @@ export async function handleUpdateMember(interaction: ChatInputCommandInteractio
       return;
     }
 
-    // Cannot update the captain's role
-    if (user.id === interaction.user.id) {
-      await interaction.editReply('You cannot update your own role as you are the captain.');
-      return;
-    }
-
     // Update the member's role
     const success = await tournamentService.updateTeamMemberRole(captainTeam.teamId, user.id, role);
 
@@ -337,5 +385,192 @@ export async function handleUpdateMember(interaction: ChatInputCommandInteractio
   } catch (error) {
     logger.error('Error updating team member:', error as Error);
     await interaction.editReply('Failed to update team member. Check logs for details.');
+  }
+}
+
+/**
+ * Handle the team transfer_captain command
+ */
+export async function handleTransferCaptain(interaction: ChatInputCommandInteraction) {
+  await interaction.deferReply();
+
+  try {
+    const newCaptain = interaction.options.getUser('user', true);
+
+    // Check if the command user is a team captain
+    const teams = await tournamentService.getTournamentStandings();
+    const captainTeam = teams.find(team => team.captainId === interaction.user.id);
+
+    if (!captainTeam) {
+      await interaction.editReply(
+        'You are not a team captain. Only team captains can transfer the captain role.',
+      );
+      return;
+    }
+
+    // Cannot transfer captain role to yourself
+    if (newCaptain.id === interaction.user.id) {
+      await interaction.editReply('You cannot transfer the captain role to yourself.');
+      return;
+    }
+
+    // Check if the user is in this team
+    const isMember = captainTeam.members.some(member => member.discordId === newCaptain.id);
+    if (!isMember) {
+      await interaction.editReply(`<@${newCaptain.id}> is not a member of your team.`);
+      return;
+    }
+
+    // Transfer the captain role
+    const success = await tournamentService.transferCaptainRole(captainTeam.teamId, newCaptain.id);
+
+    if (success) {
+      await interaction.editReply(
+        `Successfully transferred captain role to <@${newCaptain.id}> in team **${captainTeam.name}**.`,
+      );
+    } else {
+      await interaction.editReply(`Failed to transfer captain role to <@${newCaptain.id}>.`);
+    }
+  } catch (error) {
+    logger.error('Error transferring captain role:', error as Error);
+    await interaction.editReply('Failed to transfer captain role. Check logs for details.');
+  }
+}
+
+/**
+ * Handle the team add_to_tournament command
+ */
+export async function handleAddTeamToTournament(interaction: ChatInputCommandInteraction) {
+  await interaction.deferReply();
+
+  try {
+    const teamId = interaction.options.getString('team_id', true);
+    const tournamentId = interaction.options.getString('tournament_id', true);
+
+    // Check if the command user is a team captain
+    const teams = await tournamentService.getTournamentStandings();
+    const captainTeam = teams.find(team => team.captainId === interaction.user.id);
+
+    if (!captainTeam) {
+      await interaction.editReply(
+        'You are not a team captain. Only team captains can add teams to tournaments.',
+      );
+      return;
+    }
+
+    // Check if the team ID matches the captain's team
+    if (captainTeam.teamId !== teamId) {
+      await interaction.editReply(
+        'You can only add your own team to tournaments. Please provide your team ID.',
+      );
+      return;
+    }
+
+    // Add team to tournament
+    const success = await tournamentService.addTeamToTournament(teamId, tournamentId);
+
+    if (success) {
+      const tournament = await tournamentService.getTournamentById(tournamentId);
+      if (!tournament) {
+        await interaction.editReply(
+          `Successfully added team **${captainTeam.name}** to tournament ${tournamentId}.`,
+        );
+        return;
+      }
+
+      const embed = new EmbedBuilder()
+        .setColor('#0099ff')
+        .setTitle('Team Added to Tournament')
+        .setDescription(`Your team **${captainTeam.name}** has been added to tournament **${tournament.name}**!`)
+        .addFields(
+          { name: 'Team ID', value: teamId, inline: true },
+          { name: 'Tournament ID', value: tournamentId, inline: true },
+          { name: 'Starting Tier', value: '5', inline: true },
+          { name: 'Next Steps', value: 'Use `/team view_tournament` to see your team\'s tournament stats!' },
+        )
+        .setTimestamp()
+        .setFooter({ text: 'Twinspire Bot' });
+
+      await interaction.editReply({ embeds: [embed] });
+    } else {
+      await interaction.editReply(
+        'Failed to add team to tournament. The team may already be in this tournament or the tournament may not exist.',
+      );
+    }
+  } catch (error) {
+    logger.error('Error adding team to tournament:', error as Error);
+    await interaction.editReply('Failed to add team to tournament. Check logs for details.');
+  }
+}
+
+/**
+ * Handle the team remove_from_tournament command
+ */
+export async function handleRemoveTeamFromTournament(interaction: ChatInputCommandInteraction) {
+  await interaction.deferReply();
+
+  try {
+    const teamId = interaction.options.getString('team_id', true);
+    const tournamentId = interaction.options.getString('tournament_id', true);
+
+    // Check if the command user is a team captain
+    const teams = await tournamentService.getTournamentStandings();
+    const captainTeam = teams.find(team => team.captainId === interaction.user.id);
+
+    if (!captainTeam) {
+      await interaction.editReply(
+        'You are not a team captain. Only team captains can remove teams from tournaments.',
+      );
+      return;
+    }
+
+    // Check if the team ID matches the captain's team
+    if (captainTeam.teamId !== teamId) {
+      await interaction.editReply(
+        'You can only remove your own team from tournaments. Please provide your team ID.',
+      );
+      return;
+    }
+
+    // Get tournament stats before removing
+    const tournamentStats = await tournamentService.getTeamTournamentStats(teamId, tournamentId);
+    if (!tournamentStats) {
+      await interaction.editReply('Your team is not in this tournament.');
+      return;
+    }
+
+    // Remove team from tournament
+    const success = await tournamentService.removeTeamFromTournament(teamId, tournamentId);
+
+    if (success) {
+      const tournament = await tournamentService.getTournamentById(tournamentId);
+      if (!tournament) {
+        await interaction.editReply(
+          `Successfully removed team **${captainTeam.name}** from tournament ${tournamentId}.`,
+        );
+        return;
+      }
+
+      const embed = new EmbedBuilder()
+        .setColor('#ff0000')
+        .setTitle('Team Removed from Tournament')
+        .setDescription(`Your team **${captainTeam.name}** has been removed from tournament **${tournament.name}**`)
+        .addFields(
+          { name: 'Team ID', value: teamId, inline: true },
+          { name: 'Tournament ID', value: tournamentId, inline: true },
+          { name: 'Final Stats', value: `Wins: ${tournamentStats.wins}, Losses: ${tournamentStats.losses}, Prestige: ${tournamentStats.prestige}`, inline: false },
+        )
+        .setTimestamp()
+        .setFooter({ text: 'Twinspire Bot' });
+
+      await interaction.editReply({ embeds: [embed] });
+    } else {
+      await interaction.editReply(
+        'Failed to remove team from tournament. The team may not be in this tournament or the tournament may not exist.',
+      );
+    }
+  } catch (error) {
+    logger.error('Error removing team from tournament:', error as Error);
+    await interaction.editReply('Failed to remove team from tournament. Check logs for details.');
   }
 }
