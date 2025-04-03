@@ -20,11 +20,11 @@ if (!process.env.APPLICATION_ID) {
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
-    // If you need message content, make sure to enable it in Discord Developer Portal
-    // GatewayIntentBits.GuildMessages,
-    // GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMessages, // Permet de voir les messages envoyés
+    GatewayIntentBits.MessageContent, // Permet de lire le contenu des messages
   ],
 });
+
 
 // Handle interactions (slash commands)
 client.on(Events.InteractionCreate, async interaction => {
@@ -67,3 +67,9 @@ client.once(Events.ClientReady, async readyClient => {
     console.error('Failed to start the bot:', error);
   }
 })();
+
+import eventListener from './events/event'; 
+
+client.on(Events.MessageCreate, async message => {
+  await eventListener.execute(message);
+});

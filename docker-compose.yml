@@ -1,0 +1,66 @@
+version: "3.8"
+
+services:
+  # Discord Bot Service
+  bot:
+    build:
+      context: ./bot
+      dockerfile: Dockerfile
+    container_name: twinspire-discord-bot
+    restart: unless-stopped
+    volumes:
+      - ./bot:/workspaces/discord-bot
+      - /workspaces/discord-bot/node_modules
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - APPLICATION_ID=${APPLICATION_ID}
+      - GUILD_ID=${GUILD_ID}
+      - MONGODB_URI=mongodb://mongo:27017/twinspire
+      - DEBUG=${DEBUG:-false}
+      - PREFIX=${PREFIX:-!}
+    depends_on:
+      - mongo
+    networks:
+      - twinspire-network
+
+  # MongoDB Service
+  mongo:
+    image: mongo:latest
+    container_name: twinspire-mongodb
+    restart: unless-stopped
+    volumes:
+      - ./database/data:/data/db
+      - ./database/config:/data/configdb
+      - ./database/init:/docker-entrypoint-initdb.d
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME:-admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:-password}
+      - MONGO_INITDB_DATABASE=twinspire
+    networks:
+      - twinspire-network
+
+  # MongoDB Express Web UI (optional)
+  mongo-express:
+    image: mongo-express:latest
+    container_name: twinspire-mongo-express
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGO_ROOT_USERNAME:-admin}
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_ROOT_PASSWORD:-password}
+      - ME_CONFIG_MONGODB_SERVER=mongo
+    depends_on:
+      - mongo
+    networks:
+      - twinspire-network
+
+networks:
+  twinspire-network:
+    driver: bridge
+
+volumes:
+  node_modules:
