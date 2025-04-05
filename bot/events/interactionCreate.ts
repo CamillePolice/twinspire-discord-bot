@@ -1,6 +1,6 @@
 import { Interaction } from 'discord.js';
 import { commands } from '../commands';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.utils';
 
 export async function interactionCreate(interaction: Interaction): Promise<void> {
   // Only handle chat command interactions

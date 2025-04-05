@@ -1,7 +1,7 @@
 // src/commands/team-challenges.ts
 import { ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
-import { TournamentService } from '../../services/tournament/tournamentService';
-import { logger } from '../../utils/logger';
+import { TournamentService } from '../../services/tournament/tournament.services';
+import { logger } from '../../utils/logger.utils';
 
 const tournamentService = new TournamentService();
 
@@ -36,7 +36,7 @@ export async function handleChallenge(interaction: ChatInputCommandInteraction) 
     }
 
     // Check if the defending team exists
-    const defendingTeam = await tournamentService.getTeamById(defendingTeamId);
+    const defendingTeam = await tournamentService.getTeamByTeamId(defendingTeamId);
     if (!defendingTeam) {
       await interaction.editReply(`Team with ID ${defendingTeamId} not found.`);
       return;

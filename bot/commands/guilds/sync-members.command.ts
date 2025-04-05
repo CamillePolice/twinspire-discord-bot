@@ -4,8 +4,8 @@ import {
   PermissionFlagsBits,
   CacheType,
 } from 'discord.js';
-import { syncGuildMembers } from '../guilds/syncGuildMembers';
-import { logger } from '../utils/logger';
+import { syncGuildMembers } from '../../guilds/syncGuildMembers';
+import { logger } from '../../utils/logger.utils';
 
 export default {
   data: new SlashCommandBuilder()

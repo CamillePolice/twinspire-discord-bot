@@ -1,8 +1,8 @@
 // src/commands/team-management.ts
 import { ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
-import { TournamentService } from '../../services/tournament/tournamentService';
-import { logger } from '../../utils/logger';
-import { Team, TeamMember, Role } from '../../database/models/tournament';
+import { TournamentService } from '../../services/tournament/tournament.services';
+import { logger } from '../../utils/logger.utils';
+import { Team, TeamMember, Role } from '../../database/models/tournament.model';
 
 const tournamentService = new TournamentService();
 

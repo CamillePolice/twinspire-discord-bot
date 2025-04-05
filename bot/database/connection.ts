@@ -1,5 +1,5 @@
 import { MongoClient, Db } from 'mongodb';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.utils';
 
 // Parse MongoDB URI from environment or use default with auth
 const url = 'mongodb://admin:password@mongo:27017/twinspire?authSource=admin';

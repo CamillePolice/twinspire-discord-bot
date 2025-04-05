@@ -1,7 +1,7 @@
 import { GuildMember, PartialGuildMember } from 'discord.js';
-import { getDatabase } from '../database/connection';
-import { logger } from '../utils/logger';
-import { GuildAffiliation } from '../database/models';
+import { getDatabase } from '../../database/connection';
+import { logger } from '../../utils/logger.utils';
+import { GuildAffiliation } from '../../database/models';
 
 export async function guildMemberAdd(member: GuildMember): Promise<void> {
   // Skip bots

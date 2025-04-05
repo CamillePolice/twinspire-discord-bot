@@ -5,8 +5,8 @@ import {
   CacheType,
   PermissionFlagsBits,
 } from 'discord.js';
-import { getDatabase } from '../database/connection';
-import { logger } from '../utils/logger';
+import { getDatabase } from '../../database/connection';
+import { logger } from '../../utils/logger.utils';
 
 export default {
   data: new SlashCommandBuilder()

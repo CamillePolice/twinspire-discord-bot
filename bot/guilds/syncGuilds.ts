@@ -1,6 +1,6 @@
 import { Client } from 'discord.js';
 import { getDatabase } from '../database/connection';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.utils';
 
 /**
  * Syncs all guilds the bot is in with the database

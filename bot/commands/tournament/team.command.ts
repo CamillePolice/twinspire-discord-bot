@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
-import { logger } from '../../utils/logger';
+import { logger } from '../../utils/logger.utils';
 import {
   handleCreateTeam,
   handleViewTeam,
@@ -7,13 +7,13 @@ import {
   handleRemoveMember,
   handleUpdateMember,
   handleTransferCaptain,
-} from './teamManagement';
+} from './team-management.command';
 import {
   handleChallenge,
   handleProposeDates,
   handleScheduleChallenge,
   handleSubmitResult,
-} from './teamChallenges';
+} from './team-challenge.command';
 
 export default {
   data: new SlashCommandBuilder()

@@ -1,6 +1,6 @@
 import { Guild } from 'discord.js';
-import { getDatabase } from '../database/connection';
-import { logger } from '../utils/logger';
+import { getDatabase } from '../../database/connection';
+import { logger } from '../../utils/logger.utils';
 
 export async function guildCreate(guild: Guild): Promise<void> {
   logger.info(`Joined new guild: ${guild.name} (${guild.id})`);
