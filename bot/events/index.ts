@@ -1,12 +1,12 @@
 // src/events/index.ts
 import { Client } from 'discord.js';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.utils';
 import { ready } from './ready';
 import { interactionCreate } from './interactionCreate';
-import { guildCreate } from './guildCreate';
-import { guildDelete } from './guildDelete';
-import { guildMemberAdd } from './guildMember';
-import { guildMemberUpdate } from './guildMember';
+import { guildCreate } from './guilds/guild-create.events';
+import { guildDelete } from './guilds/guild-delete.events';
+import { guildMemberAdd } from './guilds/guild-members.events';
+import { guildMemberUpdate } from './guilds/guild-members.events';
 
 // Register all event handlers
 export function registerEvents(client: Client): void {

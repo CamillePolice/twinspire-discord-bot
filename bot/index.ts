@@ -3,7 +3,7 @@ import { Client, GatewayIntentBits } from 'discord.js';
 import dotenv from 'dotenv';
 import { initializeDatabaseConnection } from './database/connection';
 import { registerEvents } from './events';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.utils';
 
 // Load environment variables
 dotenv.config();

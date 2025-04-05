@@ -7,7 +7,7 @@ import {
   TextChannel,
   EmbedBuilder,
 } from 'discord.js';
-import { logger } from '../../../utils/logger';
+import { logger } from '../../../utils/logger.utils';
 import { TournamentMaintenanceScheduler } from '../../../schedulers/tournamentMaintenance';
 
 // Reference to the maintenance scheduler instance

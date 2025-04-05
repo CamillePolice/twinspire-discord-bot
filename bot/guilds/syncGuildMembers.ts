@@ -1,7 +1,7 @@
 // src/guilds/syncMembers.ts
 import { Client, Guild } from 'discord.js';
 import { getDatabase } from '../database/connection';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.utils';
 import { GuildAffiliation, UserData } from '../database/models';
 
 /**

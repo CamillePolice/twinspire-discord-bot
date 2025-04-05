@@ -1,6 +1,6 @@
 import { Client, TextChannel } from 'discord.js';
-import { TournamentService } from '../services/tournament/tournamentService';
-import { logger } from '../utils/logger';
+import { TournamentService } from '../services/tournament/tournament.services';
+import { logger } from '../utils/logger.utils';
 
 /**
  * Class to handle scheduled tournament maintenance tasks

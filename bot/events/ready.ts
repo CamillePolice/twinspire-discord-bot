@@ -3,10 +3,10 @@
 import { Client } from 'discord.js';
 import { loadCommands, registerCommands } from '../commands';
 import { syncGuildsWithDatabase } from '../guilds/syncGuilds';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.utils';
 import { syncAllGuildMembers } from '../guilds/syncGuildMembers';
 import { TournamentMaintenanceScheduler } from '../schedulers/tournamentMaintenance';
-import { setMaintenanceScheduler } from '../commands/tournament/maintenance/maintenance';
+import { setMaintenanceScheduler } from '../commands/tournament/maintenance/maintenance.command';
 
 export async function ready(client: Client): Promise<void> {
   if (!client.user) {

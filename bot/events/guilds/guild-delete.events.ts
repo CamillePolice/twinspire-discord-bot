@@ -1,7 +1,7 @@
 // src/events/guildDelete.ts - Handles guild leave event
 import { Guild } from 'discord.js';
-import { getDatabase } from '../database/connection';
-import { logger } from '../utils/logger';
+import { getDatabase } from '../../database/connection';
+import { logger } from '../../utils/logger.utils';
 
 export async function guildDelete(guild: Guild): Promise<void> {
   logger.info(`Left guild: ${guild.name} (${guild.id})`);
