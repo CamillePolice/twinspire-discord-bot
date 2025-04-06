@@ -1,17 +1,17 @@
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../../utils/logger.utils';
 import Team, { ITeam, ITeamMember } from '../../database/models/team.model';
-import { TeamTournament } from '../../database/models';
+import { Challenge, TeamTournament, Tournament } from '../../database/models';
 
 export class TeamService {
   constructor() {}
 
   /**
    * Creates a new team
-   * 
+   *
    * @param teamData - Team creation data (name, captain, etc.)
    * @returns The created team object
-   * 
+   *
    * Initial values:
    * - tier: 5 (lowest tier)
    * - prestige: 0
@@ -39,7 +39,7 @@ export class TeamService {
       });
 
       await team.save();
-      logger.info(`Created new team: ${team.name} (${team.teamId}) with captain ${team.captain}`);
+      logger.info(`Created new team: ${team.name} (${team.teamId}) with captain ${team.captainId}`);
 
       return team;
     } catch (error) {
@@ -50,7 +50,7 @@ export class TeamService {
 
   /**
    * Retrieves a team by its ID
-   * 
+   *
    * @param teamId - ID of the team to retrieve
    * @returns Team object with tournaments populated or null if not found
    */
@@ -64,8 +64,23 @@ export class TeamService {
   }
 
   /**
+   * Retrieves a team by its ID
+   *
+   * @param teamId - ID of the team to retrieve
+   * @returns Team object with tournaments populated or null if not found
+   */
+  async getTeamByTeamName(name: string): Promise<ITeam | null> {
+    try {
+      return Team.findOne({ name }).populate('tournaments');
+    } catch (error) {
+      logger.error(`Error fetching team ${name}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Gets all teams in a specific tier
-   * 
+   *
    * @param tier - Tier number to filter teams by
    * @returns Array of team objects in the specified tier
    */
@@ -89,7 +104,7 @@ export class TeamService {
 
   /**
    * Adds a new member to a team
-   * 
+   *
    * @param teamId - ID of the team
    * @param member - Member object with username, discordId, and role
    * @returns Boolean indicating success
@@ -114,7 +129,7 @@ export class TeamService {
 
   /**
    * Removes a member from a team
-   * 
+   *
    * @param teamId - ID of the team
    * @param discordId - Discord ID of the member to remove
    * @returns Boolean indicating success
@@ -139,7 +154,7 @@ export class TeamService {
 
   /**
    * Updates the role of a team member
-   * 
+   *
    * @param teamId - ID of the team
    * @param discordId - Discord ID of the member
    * @param role - New role for the member
@@ -167,7 +182,7 @@ export class TeamService {
 
   /**
    * Updates a team's statistics
-   * 
+   *
    * @param teamId - ID of the team
    * @param updates - Object containing stats to update:
    *   - tier: New tier ranking
@@ -222,11 +237,11 @@ export class TeamService {
 
   /**
    * Transfers team captaincy to another team member
-   * 
+   *
    * @param teamId - ID of the team
    * @param newCaptainId - Discord ID of the new captain
    * @returns Boolean indicating success
-   * 
+   *
    * Validation:
    * - Verifies the new captain is already a team member
    */
@@ -272,6 +287,160 @@ export class TeamService {
       return update1.modifiedCount > 0 || update2.modifiedCount > 0;
     } catch (error) {
       logger.error(`Error transferring captain role in team ${teamId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Adds a team to a tournament
+   *
+   * @param teamId - ID of the team to add
+   * @param tournamentId - ID of the tournament to add the team to
+   * @param initialTier - Initial tier to place the team in (defaults to lowest tier)
+   * @returns Boolean indicating success
+   *
+   * Creates a TeamTournament record that links the team and tournament
+   * with initial values for tier, prestige, wins, losses, etc.
+   */
+  async addTeamToTournament(
+    teamId: string,
+    tournamentId: string,
+    initialTier?: number,
+  ): Promise<boolean> {
+    try {
+      // Verify the team exists
+      const team = await this.getTeamByTeamId(teamId);
+      if (!team) {
+        logger.error(`Team ${teamId} not found`);
+        return false;
+      }
+
+      // Verify the tournament exists
+      const tournament = await Tournament.findOne({ tournamentId });
+      if (!tournament) {
+        logger.error(`Tournament ${tournamentId} not found`);
+        return false;
+      }
+
+      // Get the MongoDB _id from the team document
+      const teamDocument = await Team.findOne({ teamId });
+      if (!teamDocument) {
+        logger.error(`Team document for ${teamId} not found`);
+        return false;
+      }
+
+      // Check if the team is already in this tournament
+      const existingEntry = await TeamTournament.findOne({
+        team: teamDocument._id,
+        tournament: tournament._id,
+      });
+
+      if (existingEntry) {
+        logger.error(`Team ${teamId} is already registered for tournament ${tournamentId}`);
+        return false;
+      }
+
+      // Determine the initial tier (default to the lowest tier if not specified)
+      const tier = initialTier || tournament.maxTiers;
+
+      // Create the team tournament entry
+      const teamTournament = new TeamTournament({
+        team: teamDocument._id,
+        tournament: tournament._id,
+        tier: tier,
+        prestige: 0,
+        wins: 0,
+        losses: 0,
+        winStreak: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      await teamTournament.save();
+
+      // Add this tournament entry to the team's tournaments array
+      await Team.updateOne(
+        { teamId },
+        {
+          $push: { tournaments: teamTournament._id },
+          $set: { updatedAt: new Date() },
+        },
+      );
+
+      logger.info(
+        `Added team ${team.name} (${teamId}) to tournament ${tournament.name} (${tournamentId}) at tier ${tier}`,
+      );
+      return true;
+    } catch (error) {
+      logger.error(`Error adding team ${teamId} to tournament ${tournamentId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Removes a team from a tournament
+   *
+   * @param teamId - ID of the team to remove
+   * @param tournamentId - ID of the tournament to remove the team from
+   * @returns Boolean indicating success
+   */
+  async removeTeamFromTournament(teamId: string, tournamentId: string): Promise<boolean> {
+    try {
+      // Find the team document to get its MongoDB _id
+      const team = await Team.findOne({ teamId });
+      if (!team) {
+        logger.error(`Team ${teamId} not found`);
+        return false;
+      }
+
+      // Find the tournament document to get its MongoDB _id
+      const tournament = await Tournament.findOne({ tournamentId });
+      if (!tournament) {
+        logger.error(`Tournament ${tournamentId} not found`);
+        return false;
+      }
+
+      // Find the team tournament entry
+      const teamTournament = await TeamTournament.findOne({
+        team: team._id,
+        tournament: tournament._id,
+      });
+
+      if (!teamTournament) {
+        logger.error(`Team ${teamId} is not part of tournament ${tournamentId}`);
+        return false;
+      }
+
+      // Check if there are any pending challenges involving this team in this tournament
+      const pendingChallenges = await Challenge.find({
+        tournamentId,
+        $or: [{ challengerTeamId: teamId }, { defendingTeamId: teamId }],
+        status: { $in: ['pending', 'scheduled'] },
+      });
+
+      if (pendingChallenges.length > 0) {
+        logger.error(
+          `Cannot remove team ${teamId} from tournament ${tournamentId} with pending challenges`,
+        );
+        return false;
+      }
+
+      // Remove the team tournament entry
+      await TeamTournament.deleteOne({ _id: teamTournament._id });
+
+      // Remove reference to this tournament from the team's tournaments array
+      await Team.updateOne(
+        { teamId },
+        {
+          $pull: { tournaments: teamTournament._id },
+          $set: { updatedAt: new Date() },
+        },
+      );
+
+      logger.info(`Removed team ${teamId} from tournament ${tournamentId}`);
+      return true;
+    } catch (error) {
+      logger.error(`Error removing team ${teamId} from tournament ${tournamentId}:`, error);
       throw error;
     }
   }

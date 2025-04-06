@@ -3,6 +3,10 @@ import { TournamentFormat } from '../enums/tournament-format.enums';
 import { TournamentStatus } from '../enums/tournament-status.enums';
 const tournamentSchema: Schema = new Schema(
   {
+    tournamentId: {
+      type: String,
+      required: true,
+    },
     name: {
       type: String,
       required: true,
@@ -95,6 +99,7 @@ interface IRewards {
 // Interface for the document
 export interface ITournament {
   _id: Schema.Types.ObjectId;
+  tournamentId: string;
   name: string;
   description?: string;
   game: string;

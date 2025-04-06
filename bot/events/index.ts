@@ -2,7 +2,7 @@
 import { Client } from 'discord.js';
 import { logger } from '../utils/logger.utils';
 import { ready } from './ready';
-import { interactionCreate } from './interactionCreate';
+import { interactionCreate } from './interact-create.events';
 import { guildCreate } from './guilds/guild-create.events';
 import { guildDelete } from './guilds/guild-delete.events';
 import { guildMemberAdd } from './guilds/guild-members.events';

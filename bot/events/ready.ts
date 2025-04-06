@@ -2,9 +2,9 @@
 
 import { Client } from 'discord.js';
 import { loadCommands, registerCommands } from '../commands';
-import { syncGuildsWithDatabase } from '../guilds/syncGuilds';
+import { syncGuildsWithDatabase } from '../guilds/sync-guild.guilds';
 import { logger } from '../utils/logger.utils';
-import { syncAllGuildMembers } from '../guilds/syncGuildMembers';
+import { syncAllGuildMembers } from '../guilds/sync-members.guilds';
 import { TournamentMaintenanceScheduler } from '../schedulers/tournamentMaintenance';
 import { setMaintenanceScheduler } from '../commands/tournament/maintenance/maintenance.command';
 

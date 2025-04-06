@@ -5,7 +5,7 @@
  * @param forfeiterTeamId ID of the team that forfeited
  * @returns Object containing score string and games array
  */
-export interface ForfeitResult {
+export type ForfeitResult = {
   score: string;
   games: { winner: string; loser: string; duration?: number }[];
-}
+};

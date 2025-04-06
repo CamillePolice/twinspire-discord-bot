@@ -7,11 +7,11 @@ export const getTeamTournament = (tournamentId: string, tournaments: ITeamTourna
   return tournament;
 };
 
-export function calculateForfeitResult(
+export const calculateForfeitResult = (
   tournament: ITournament,
   winnerTeamId: string,
   forfeiterTeamId: string,
-): ForfeitResult {
+): ForfeitResult => {
   // Get match format (BO1, BO3, BO5, etc.) from tournament rules
   const matchFormat = tournament.format;
 
@@ -37,4 +37,4 @@ export function calculateForfeitResult(
     score,
     games,
   };
-}
+};

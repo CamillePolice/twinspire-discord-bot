@@ -60,7 +60,7 @@ const teamSchema: Schema = new Schema(
 
 // Team-specific interfaces
 export interface ITeamMember {
-  _id: Schema.Types.ObjectId;
+  _id?: Schema.Types.ObjectId;
   discordId: string;
   username: string;
   role?: string;
@@ -71,7 +71,7 @@ export interface ITeamMember {
 export interface ITeam {
   teamId: string; // ID used by users to identify the team
   name: string;
-  captain: Schema.Types.ObjectId;
+  captainId: string; // Discord ID of the team captain
   members: ITeamMember[];
   tournaments: ITeamTournament[];
   createdAt: Date;

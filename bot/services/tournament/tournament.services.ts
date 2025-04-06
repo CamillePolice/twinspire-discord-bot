@@ -1,9 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../../utils/logger.utils';
-import Tournament, { ITournament } from '../../database/models/Tournament';
-import Team, { ITeam, ITeamMember } from '../../database/models/Team';
-import Challenge, { IChallenge } from '../../database/models/Challenge';
-import TeamTournament, { ITeamTournament } from '../../database/models/TeamTournament';
+import Tournament, { ITournament } from '../../database/models/tournament.model';
+import TeamTournament, { ITeamTournament } from '../../database/models/team-tournament.model';
+import { Team } from '../../database/models';
 
 export class TournamentService {
   constructor() {}
@@ -105,12 +104,62 @@ export class TournamentService {
       const standings = await TeamTournament.find({ tournament: tournamentId })
         .sort({ tier: 1, prestige: -1 })
         // Populate with team details
-        .populate('team');
+        .populate({
+          path: 'team',
+          select: 'name captain',
+        });
 
       logger.info(`Fetched standings for tournament ${tournamentId}`);
       return standings;
     } catch (error) {
       logger.error(`Error fetching tournament standings for ${tournamentId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gets the tournament stats for a specific team in a specific tournament
+   *
+   * @param teamId - ID of the team
+   * @param tournamentId - ID of the tournament
+   * @returns TeamTournament object or null if not found
+   */
+  async getTeamTournamentStats(
+    teamId: string,
+    tournamentId: string,
+  ): Promise<ITeamTournament | null> {
+    try {
+      // Find the team document to get its MongoDB _id
+      const team = await Team.findOne({ teamId });
+      if (!team) {
+        logger.error(`Team ${teamId} not found`);
+        return null;
+      }
+
+      // Find the tournament document to get its MongoDB _id
+      const tournament = await Tournament.findOne({ tournamentId });
+      if (!tournament) {
+        logger.error(`Tournament ${tournamentId} not found`);
+        return null;
+      }
+
+      // Find the team tournament entry using the MongoDB _ids
+      const teamTournament = await TeamTournament.findOne({
+        team: team._id,
+        tournament: tournament._id,
+      });
+
+      if (!teamTournament) {
+        logger.info(`Team ${teamId} is not part of tournament ${tournamentId}`);
+        return null;
+      }
+
+      return teamTournament;
+    } catch (error) {
+      logger.error(
+        `Error fetching team tournament stats for team ${teamId} in tournament ${tournamentId}:`,
+        error,
+      );
       throw error;
     }
   }

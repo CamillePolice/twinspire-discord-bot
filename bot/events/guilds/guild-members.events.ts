@@ -1,8 +1,19 @@
 import { GuildMember, PartialGuildMember } from 'discord.js';
-import { getDatabase } from '../../database/connection';
 import { logger } from '../../utils/logger.utils';
-import { GuildAffiliation } from '../../database/models';
+import User from '../../database/models/user.model';
+import { IGuildAffiliation } from '../../database/models/user.model';
 
+/**
+ * Handles the event when a new member joins a guild
+ *
+ * @param member - The GuildMember that joined
+ * @returns Promise resolving when the member has been added to the database
+ *
+ * Actions:
+ * - Adds the user to the database if they don't exist
+ * - Adds the guild to the user's guild list if it's not there
+ * - Updates the user's information if they're already in the database
+ */
 export async function guildMemberAdd(member: GuildMember): Promise<void> {
   // Skip bots
   if (member.user.bot) return;
@@ -12,12 +23,8 @@ export async function guildMemberAdd(member: GuildMember): Promise<void> {
   );
 
   try {
-    // Get the database instance
-    const db = getDatabase();
-    const usersCollection = db.collection('users');
-
     // Check if the user already exists in the database
-    const existingUser = await usersCollection.findOne({ discordId: member.id });
+    const existingUser = await User.findOne({ discordId: member.id });
 
     // Get member's nickname if available
     const nickname = member.nickname || undefined;
@@ -33,12 +40,12 @@ export async function guildMemberAdd(member: GuildMember): Promise<void> {
     if (existingUser) {
       // Check if this guild is already in the user's guild list
       const guildEntry = existingUser.guilds?.find(
-        (g: GuildAffiliation) => g.guildId === member.guild.id,
+        (g: IGuildAffiliation) => g.guildId === member.guild.id,
       );
 
       if (guildEntry) {
         // Update the existing guild entry
-        await usersCollection.updateOne(
+        await User.updateOne(
           {
             discordId: member.id,
             'guilds.guildId': member.guild.id,
@@ -55,7 +62,7 @@ export async function guildMemberAdd(member: GuildMember): Promise<void> {
         );
       } else {
         // Add this guild to the user's guild list
-        await usersCollection.updateOne(
+        await User.updateOne(
           { discordId: member.id },
           {
             $set: {
@@ -78,7 +85,7 @@ export async function guildMemberAdd(member: GuildMember): Promise<void> {
       );
     } else {
       // Create a new user entry
-      const newUser = {
+      const newUser = new User({
         discordId: member.id,
         username: member.user.username,
         joinedAt: new Date(),
@@ -90,12 +97,12 @@ export async function guildMemberAdd(member: GuildMember): Promise<void> {
             guildId: member.guild.id,
             joinedAt: memberJoinedAt,
             nickname: nickname,
-            roles: [],
+            roles: roles,
           },
         ],
-      };
+      });
 
-      await usersCollection.insertOne(newUser);
+      await newUser.save();
       logger.info(`Added new user to database: ${member.user.tag} (${member.id})`);
     }
   } catch (error) {
@@ -103,6 +110,18 @@ export async function guildMemberAdd(member: GuildMember): Promise<void> {
   }
 }
 
+/**
+ * Handles the event when a member is updated in a guild
+ *
+ * @param oldMember - The GuildMember before the update
+ * @param newMember - The GuildMember after the update
+ * @returns Promise resolving when the member has been updated in the database
+ *
+ * Actions:
+ * - Updates the member's roles if they've changed
+ * - Updates the member's nickname if it's changed
+ * - Adds the guild to the user's guild list if it's not there
+ */
 export async function guildMemberUpdate(
   oldMember: GuildMember | PartialGuildMember,
   newMember: GuildMember,
@@ -111,10 +130,6 @@ export async function guildMemberUpdate(
   if (newMember.user.bot) return;
 
   try {
-    // Get the database instance
-    const db = getDatabase();
-    const usersCollection = db.collection('users');
-
     // Check if roles have changed (we handle nickname separately as it's explicitly stored)
     const oldRoles = oldMember.roles?.cache?.map(role => role.id) || [];
     const newRoles = newMember.roles.cache
@@ -137,7 +152,7 @@ export async function guildMemberUpdate(
       );
 
       // Check if user exists in the database
-      const existingUser = await usersCollection.findOne({
+      const existingUser = await User.findOne({
         discordId: newMember.id,
         'guilds.guildId': newMember.guild.id,
       });
@@ -164,7 +179,7 @@ export async function guildMemberUpdate(
           logger.info(`Updated nickname for ${newMember.user.tag} in ${newMember.guild.name}`);
         }
 
-        await usersCollection.updateOne(
+        await User.updateOne(
           {
             discordId: newMember.id,
             'guilds.guildId': newMember.guild.id,
@@ -175,7 +190,7 @@ export async function guildMemberUpdate(
         // User exists but guild entry doesn't, add it
         logger.info(`Adding guild entry for ${newMember.user.tag} in ${newMember.guild.name}`);
 
-        await usersCollection.updateOne(
+        await User.updateOne(
           { discordId: newMember.id },
           {
             $push: {

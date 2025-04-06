@@ -10,12 +10,14 @@ const challengeSchema: Schema = new Schema(
       type: String,
       required: true,
     },
-    challengerTeamId: {
-      type: String,
+    challengerTeamTournament: {
+      type: Schema.Types.ObjectId,
+      ref: 'TeamTournament',
       required: true,
     },
-    defendingTeamId: {
-      type: String,
+    defendingTeamTournament: {
+      type: Schema.Types.ObjectId,
+      ref: 'TeamTournament',
       required: true,
     },
     status: {
@@ -112,8 +114,8 @@ export interface IChallenge {
   _id: Schema.Types.ObjectId;
   challengeId: string;
   tournamentId: string;
-  challengerTeamId: string;
-  defendingTeamId: string;
+  challengerTeamTournament: Schema.Types.ObjectId;
+  defendingTeamTournament: Schema.Types.ObjectId & { team: { name: string } };
   status: 'pending' | 'scheduled' | 'completed' | 'cancelled' | 'forfeited';
   scheduledDate?: Date;
   proposedDates?: Date[];

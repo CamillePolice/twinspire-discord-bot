@@ -6,9 +6,14 @@ import {
   PermissionFlagsBits,
 } from 'discord.js';
 import { TournamentService } from '../../services/tournament/tournament.services';
+import { ChallengeService } from '../../services/tournament/challenge.services';
 import { logger } from '../../utils/logger.utils';
+import { IChallenge } from '../../database/models/challenge.model';
+import { ITeamTournament } from '../../database/models/team-tournament.model';
+import { ITeam } from '../../database/models/team.model';
 
 const tournamentService = new TournamentService();
+const challengeService = new ChallengeService();
 
 export default {
   data: new SlashCommandBuilder()
@@ -155,22 +160,28 @@ async function handleViewChallenge(interaction: ChatInputCommandInteraction) {
   try {
     const challengeId = interaction.options.getString('challenge_id', true);
 
-    const challenge = await tournamentService.getChallengeById(challengeId);
+    const challenge = await challengeService.getChallengeById(challengeId);
     if (!challenge) {
       await interaction.editReply(`Challenge with ID ${challengeId} not found.`);
       return;
     }
 
     // Get team details
-    const teams = await tournamentService.getTournamentStandings();
-    const challengerTeam = teams.find(team => team.teamId === challenge.challengerTeamId);
-    const defendingTeam = teams.find(team => team.teamId === challenge.defendingTeamId);
+    const teams = await tournamentService.getTournamentStandings(challenge.tournamentId);
+    const challengerTeam = teams.find(
+      team => team._id.toString() === challenge.challengerTeamTournament.toString(),
+    ) as ITeamTournament & { team: ITeam };
+    const defendingTeam = teams.find(
+      team => team._id.toString() === challenge.defendingTeamTournament.toString(),
+    ) as ITeamTournament & { team: ITeam };
 
     // Format proposed dates
     let proposedDatesText = 'No dates proposed yet.';
     if (challenge.proposedDates && challenge.proposedDates.length > 0) {
       proposedDatesText = challenge.proposedDates
-        .map((date, index) => `${index + 1}. <t:${Math.floor(date.getTime() / 1000)}:F>`)
+        .map(
+          (date: Date, index: number) => `${index + 1}. <t:${Math.floor(date.getTime() / 1000)}:F>`,
+        )
         .join('\n');
     }
 
@@ -184,11 +195,15 @@ async function handleViewChallenge(interaction: ChatInputCommandInteraction) {
     let resultText = 'No result yet.';
     if (challenge.result) {
       const winnerTeam =
-        challenge.result.winner === challenge.challengerTeamId ? challengerTeam : defendingTeam;
+        challenge.result.winner === challenge.challengerTeamTournament.toString()
+          ? challengerTeam
+          : defendingTeam;
       const loserTeam =
-        challenge.result.winner === challenge.challengerTeamId ? defendingTeam : challengerTeam;
+        challenge.result.winner === challenge.challengerTeamTournament.toString()
+          ? defendingTeam
+          : challengerTeam;
 
-      resultText = `**${winnerTeam?.name || 'Unknown Team'}** defeated **${loserTeam?.name || 'Unknown Team'}** with a score of **${challenge.result.score}**`;
+      resultText = `**${winnerTeam?.team.name || 'Unknown Team'}** defeated **${loserTeam?.team.name || 'Unknown Team'}** with a score of **${challenge.result.score}**`;
     }
 
     // Build the embed
@@ -208,14 +223,14 @@ async function handleViewChallenge(interaction: ChatInputCommandInteraction) {
         },
         {
           name: 'Challenger',
-          value: `**${challengerTeam?.name || 'Unknown Team'}** (Tier ${challenge.tierBefore.challenger})
-                    Captain: <@${challengerTeam?.captainId}>`,
+          value: `**${challengerTeam?.team.name || 'Unknown Team'}** (Tier ${challenge.tierBefore.challenger})
+                    Captain: <@${challengerTeam?.team.captainId}>`,
           inline: false,
         },
         {
           name: 'Defender',
-          value: `**${defendingTeam?.name || 'Unknown Team'}** (Tier ${challenge.tierBefore.defending})
-                    Captain: <@${defendingTeam?.captainId}>`,
+          value: `**${defendingTeam?.team.name || 'Unknown Team'}** (Tier ${challenge.tierBefore.defending})
+                    Captain: <@${defendingTeam?.team.captainId}>`,
           inline: false,
         },
         { name: 'Proposed Dates', value: proposedDatesText, inline: false },
@@ -305,7 +320,7 @@ async function handleCheckTimeouts(interaction: ChatInputCommandInteraction) {
     }
 
     // Get challenges with overdue responses
-    const overdueResponses = await tournamentService.getPastDueDefenderResponses(tournamentId);
+    const overdueResponses = await challengeService.getPastDueDefenderResponses(tournamentId);
 
     if (overdueResponses.length === 0) {
       await interaction.editReply('No overdue challenge responses found.');
@@ -313,7 +328,7 @@ async function handleCheckTimeouts(interaction: ChatInputCommandInteraction) {
     }
 
     // Get team details
-    const teams = await tournamentService.getTournamentStandings();
+    const teams = await tournamentService.getTournamentStandings(tournamentId);
 
     // Create the embed
     const embed = new EmbedBuilder()
@@ -327,8 +342,12 @@ async function handleCheckTimeouts(interaction: ChatInputCommandInteraction) {
 
     // Add each overdue challenge
     for (const challenge of overdueResponses) {
-      const challengerTeam = teams.find(team => team.teamId === challenge.challengerTeamId);
-      const defendingTeam = teams.find(team => team.teamId === challenge.defendingTeamId);
+      const challengerTeam = teams.find(
+        team => team._id.toString() === challenge.challengerTeamTournament.toString(),
+      ) as ITeamTournament & { team: ITeam };
+      const defendingTeam = teams.find(
+        team => team._id.toString() === challenge.defendingTeamTournament.toString(),
+      ) as ITeamTournament & { team: ITeam };
 
       const daysOverdue = Math.floor(
         (new Date().getTime() -
@@ -339,11 +358,11 @@ async function handleCheckTimeouts(interaction: ChatInputCommandInteraction) {
 
       embed.addFields({
         name: `Challenge ID: ${challenge.challengeId}`,
-        value: `**Challenger**: ${challengerTeam?.name || 'Unknown Team'} (Tier ${challenge.tierBefore.challenger})
-                  **Defender**: ${defendingTeam?.name || 'Unknown Team'} (Tier ${challenge.tierBefore.defending})
+        value: `**Challenger**: ${challengerTeam?.team.name || 'Unknown Team'} (Tier ${challenge.tierBefore.challenger})
+                  **Defender**: ${defendingTeam?.team.name || 'Unknown Team'} (Tier ${challenge.tierBefore.defending})
                   **Created**: <t:${Math.floor(challenge.createdAt.getTime() / 1000)}:R>
                   **Days Overdue**: ${daysOverdue}
-                  **Captain to Contact**: <@${defendingTeam?.captainId}>`,
+                  **Captain to Contact**: <@${defendingTeam?.team.captainId}>`,
         inline: false,
       });
     }
@@ -390,7 +409,7 @@ async function handleForceResult(interaction: ChatInputCommandInteraction) {
     }
 
     // Get the challenge
-    const challenge = await tournamentService.getChallengeById(challengeId);
+    const challenge = await challengeService.getChallengeById(challengeId);
     if (!challenge) {
       await interaction.editReply(`Challenge with ID ${challengeId} not found.`);
       return;
@@ -404,10 +423,14 @@ async function handleForceResult(interaction: ChatInputCommandInteraction) {
 
     // Determine the actual winner team ID based on input
     const winnerTeamId =
-      winnerOption === 'challenger' ? challenge.challengerTeamId : challenge.defendingTeamId;
+      winnerOption === 'challenger'
+        ? challenge.challengerTeamTournament.toString()
+        : challenge.defendingTeamTournament.toString();
 
     const loserTeamId =
-      winnerOption === 'challenger' ? challenge.defendingTeamId : challenge.challengerTeamId;
+      winnerOption === 'challenger'
+        ? challenge.defendingTeamTournament.toString()
+        : challenge.challengerTeamTournament.toString();
 
     // Create game results
     const games = [];
@@ -429,7 +452,7 @@ async function handleForceResult(interaction: ChatInputCommandInteraction) {
     }
 
     // Submit the result
-    const success = await tournamentService.submitChallengeResult(
+    const success = await challengeService.submitChallengeResult(
       challengeId,
       winnerTeamId,
       score,
@@ -438,35 +461,43 @@ async function handleForceResult(interaction: ChatInputCommandInteraction) {
 
     if (success) {
       // Get team details
-      const teams = await tournamentService.getTournamentStandings();
-      const challengerTeam = teams.find(team => team.teamId === challenge.challengerTeamId);
-      const defendingTeam = teams.find(team => team.teamId === challenge.defendingTeamId);
+      const teams = await tournamentService.getTournamentStandings(challenge.tournamentId);
+      const challengerTeam = teams.find(
+        team => team._id.toString() === challenge.challengerTeamTournament.toString(),
+      ) as ITeamTournament & { team: ITeam };
+      const defendingTeam = teams.find(
+        team => team._id.toString() === challenge.defendingTeamTournament.toString(),
+      ) as ITeamTournament & { team: ITeam };
 
       const winnerTeam =
-        winnerTeamId === challenge.challengerTeamId ? challengerTeam : defendingTeam;
+        winnerTeamId === challenge.challengerTeamTournament.toString()
+          ? challengerTeam
+          : defendingTeam;
       const loserTeam =
-        winnerTeamId === challenge.challengerTeamId ? defendingTeam : challengerTeam;
+        winnerTeamId === challenge.challengerTeamTournament.toString()
+          ? defendingTeam
+          : challengerTeam;
 
       // Determine tier changes
       let tierChangeText = '';
-      if (winnerTeamId === challenge.challengerTeamId) {
+      if (winnerTeamId === challenge.challengerTeamTournament.toString()) {
         // Challenger won and moved up
-        tierChangeText = `**${winnerTeam?.name}** has moved up to Tier ${challenge.tierBefore.defending}!\n**${loserTeam?.name}** has moved down to Tier ${challenge.tierBefore.challenger}.`;
+        tierChangeText = `**${winnerTeam?.team.name}** has moved up to Tier ${challenge.tierBefore.defending}!\n**${loserTeam?.team.name}** has moved down to Tier ${challenge.tierBefore.challenger}.`;
       } else {
         // Defender successfully defended
-        tierChangeText = `**${winnerTeam?.name}** successfully defended their position in Tier ${challenge.tierBefore.defending}!\n**${loserTeam?.name}** remains in Tier ${challenge.tierBefore.challenger}.`;
+        tierChangeText = `**${winnerTeam?.team.name}** successfully defended their position in Tier ${challenge.tierBefore.defending}!\n**${loserTeam?.team.name}** remains in Tier ${challenge.tierBefore.challenger}.`;
       }
 
       const embed = new EmbedBuilder()
         .setColor('#00cc00')
         .setTitle('Admin: Match Result Forced')
         .setDescription(
-          `An administrator has forced a result for the challenge between **${challengerTeam?.name || 'Unknown Team'}** and **${defendingTeam?.name || 'Unknown Team'}**!`,
+          `An administrator has forced a result for the challenge between **${challengerTeam?.team.name || 'Unknown Team'}** and **${defendingTeam?.team.name || 'Unknown Team'}**!`,
         )
         .addFields(
           {
             name: 'Result',
-            value: `**${winnerTeam?.name || 'Unknown Team'}** defeats **${loserTeam?.name || 'Unknown Team'}** with a score of **${score}**!`,
+            value: `**${winnerTeam?.team.name || 'Unknown Team'}** defeats **${loserTeam?.team.name || 'Unknown Team'}** with a score of **${score}**!`,
             inline: false,
           },
           { name: 'Reason', value: reason, inline: false },
@@ -486,17 +517,21 @@ async function handleForceResult(interaction: ChatInputCommandInteraction) {
       // DM team captains
       try {
         if (challengerTeam) {
-          const challengerCaptain = await interaction.client.users.fetch(challengerTeam.captainId);
+          const challengerCaptain = await interaction.client.users.fetch(
+            challengerTeam.team.captainId,
+          );
           await challengerCaptain.send({
-            content: `An administrator has forced a result for your challenge against **${defendingTeam?.name}**`,
+            content: `An administrator has forced a result for your challenge against **${defendingTeam?.team.name}**`,
             embeds: [embed],
           });
         }
 
         if (defendingTeam) {
-          const defendingCaptain = await interaction.client.users.fetch(defendingTeam.captainId);
+          const defendingCaptain = await interaction.client.users.fetch(
+            defendingTeam.team.captainId,
+          );
           await defendingCaptain.send({
-            content: `An administrator has forced a result for your challenge against **${challengerTeam?.name}**`,
+            content: `An administrator has forced a result for your challenge against **${challengerTeam?.team.name}**`,
             embeds: [embed],
           });
         }
@@ -524,7 +559,7 @@ async function handleForfeit(interaction: ChatInputCommandInteraction) {
     const reason = interaction.options.getString('reason', true);
 
     // Get the challenge
-    const challenge = await tournamentService.getChallengeById(challengeId);
+    const challenge = await challengeService.getChallengeById(challengeId);
     if (!challenge) {
       await interaction.editReply(`Challenge with ID ${challengeId} not found.`);
       return;
@@ -538,50 +573,62 @@ async function handleForfeit(interaction: ChatInputCommandInteraction) {
 
     // Determine the forfeiter team ID based on input
     const forfeiterTeamId =
-      forfeiterOption === 'challenger' ? challenge.challengerTeamId : challenge.defendingTeamId;
+      forfeiterOption === 'challenger'
+        ? challenge.challengerTeamTournament.toString()
+        : challenge.defendingTeamTournament.toString();
 
     const winnerTeamId =
-      forfeiterOption === 'challenger' ? challenge.defendingTeamId : challenge.challengerTeamId;
+      forfeiterOption === 'challenger'
+        ? challenge.defendingTeamTournament.toString()
+        : challenge.challengerTeamTournament.toString();
 
     // Execute the forfeit
-    const success = await tournamentService.forfeitChallenge(challengeId, forfeiterTeamId);
+    const success = await challengeService.forfeitChallenge(challengeId, forfeiterTeamId);
 
     if (success) {
       // Get team details
-      const teams = await tournamentService.getTournamentStandings();
-      const challengerTeam = teams.find(team => team.teamId === challenge.challengerTeamId);
-      const defendingTeam = teams.find(team => team.teamId === challenge.defendingTeamId);
+      const teams = await tournamentService.getTournamentStandings(challenge.tournamentId);
+      const challengerTeam = teams.find(
+        team => team._id.toString() === challenge.challengerTeamTournament.toString(),
+      ) as ITeamTournament & { team: ITeam };
+      const defendingTeam = teams.find(
+        team => team._id.toString() === challenge.defendingTeamTournament.toString(),
+      ) as ITeamTournament & { team: ITeam };
 
       const winnerTeam =
-        winnerTeamId === challenge.challengerTeamId ? challengerTeam : defendingTeam;
+        winnerTeamId === challenge.challengerTeamTournament.toString()
+          ? challengerTeam
+          : defendingTeam;
       const loserTeam =
-        winnerTeamId === challenge.challengerTeamId ? defendingTeam : challengerTeam;
+        winnerTeamId === challenge.challengerTeamTournament.toString()
+          ? defendingTeam
+          : challengerTeam;
 
       // Determine tier changes
       let tierChangeText = '';
-      if (winnerTeamId === challenge.challengerTeamId) {
+      if (winnerTeamId === challenge.challengerTeamTournament.toString()) {
         // Challenger won by forfeit and moved up
-        tierChangeText = `**${winnerTeam?.name}** has moved up to Tier ${challenge.tierBefore.defending}!\n**${loserTeam?.name}** has moved down to Tier ${challenge.tierBefore.challenger}.`;
+        tierChangeText = `**${winnerTeam?.team.name}** has moved up to Tier ${challenge.tierBefore.defending}!\n**${loserTeam?.team.name}** has moved down to Tier ${challenge.tierBefore.challenger}.`;
       } else {
         // Defender won by forfeit
-        tierChangeText = `**${winnerTeam?.name}** remains in Tier ${challenge.tierBefore.defending}!\n**${loserTeam?.name}** remains in Tier ${challenge.tierBefore.challenger}.`;
+        tierChangeText = `**${winnerTeam?.team.name}** remains in Tier ${challenge.tierBefore.defending}!\n**${loserTeam?.team.name}** remains in Tier ${challenge.tierBefore.challenger}.`;
       }
 
       const embed = new EmbedBuilder()
         .setColor('#ff9900')
         .setTitle('Admin: Match Forfeit Forced')
         .setDescription(
-          `An administrator has declared a forfeit for the challenge between **${challengerTeam?.name || 'Unknown Team'}** and **${defendingTeam?.name || 'Unknown Team'}**!`,
+          `An administrator has declared a forfeit for the challenge between **${challengerTeam?.team.name || 'Unknown Team'}** and **${defendingTeam?.team.name || 'Unknown Team'}**!`,
         )
         .addFields(
           {
             name: 'Result',
-            value: `**${winnerTeam?.name || 'Unknown Team'}** wins by forfeit!`,
+            value: `**${winnerTeam?.team.name || 'Unknown Team'}** wins by forfeit!`,
             inline: false,
           },
           {
             name: 'Forfeiting Team',
-            value: `**${loserTeam?.name || 'Unknown Team'}**`,
+            value: `**${loserTeam?.team.name || 'Unknown Team'}**`,
             inline: true,
           },
           { name: 'Reason', value: reason, inline: false },
@@ -601,17 +648,21 @@ async function handleForfeit(interaction: ChatInputCommandInteraction) {
       // DM team captains
       try {
         if (challengerTeam) {
-          const challengerCaptain = await interaction.client.users.fetch(challengerTeam.captainId);
+          const challengerCaptain = await interaction.client.users.fetch(
+            challengerTeam.team.captainId,
+          );
           await challengerCaptain.send({
-            content: `An administrator has declared a forfeit for your challenge against **${defendingTeam?.name}**`,
+            content: `An administrator has declared a forfeit for your challenge against **${defendingTeam?.team.name}**`,
             embeds: [embed],
           });
         }
 
         if (defendingTeam) {
-          const defendingCaptain = await interaction.client.users.fetch(defendingTeam.captainId);
+          const defendingCaptain = await interaction.client.users.fetch(
+            defendingTeam.team.captainId,
+          );
           await defendingCaptain.send({
-            content: `An administrator has declared a forfeit for your challenge against **${challengerTeam?.name}**`,
+            content: `An administrator has declared a forfeit for your challenge against **${challengerTeam?.team.name}**`,
             embeds: [embed],
           });
         }
@@ -638,7 +689,7 @@ async function handleCancel(interaction: ChatInputCommandInteraction) {
     const reason = interaction.options.getString('reason', true);
 
     // Get the challenge
-    const challenge = await tournamentService.getChallengeById(challengeId);
+    const challenge = await challengeService.getChallengeById(challengeId);
     if (!challenge) {
       await interaction.editReply(`Challenge with ID ${challengeId} not found.`);
       return;
@@ -653,30 +704,23 @@ async function handleCancel(interaction: ChatInputCommandInteraction) {
     }
 
     // Update challenge status to cancelled
-    const db = tournamentService['db'];
-    const challengesCollection = tournamentService['challengesCollection'];
+    const success = await challengeService.cancelChallenge(challengeId);
 
-    const result = await challengesCollection.updateOne(
-      { challengeId },
-      {
-        $set: {
-          status: 'cancelled',
-          updatedAt: new Date(),
-        },
-      },
-    );
-
-    if (result.modifiedCount > 0) {
+    if (success) {
       // Get team details
-      const teams = await tournamentService.getTournamentStandings();
-      const challengerTeam = teams.find(team => team.teamId === challenge.challengerTeamId);
-      const defendingTeam = teams.find(team => team.teamId === challenge.defendingTeamId);
+      const teams = await tournamentService.getTournamentStandings(challenge.tournamentId);
+      const challengerTeam = teams.find(
+        team => team._id.toString() === challenge.challengerTeamTournament.toString(),
+      ) as ITeamTournament & { team: ITeam };
+      const defendingTeam = teams.find(
+        team => team._id.toString() === challenge.defendingTeamTournament.toString(),
+      ) as ITeamTournament & { team: ITeam };
 
       const embed = new EmbedBuilder()
         .setColor('#999999')
         .setTitle('Admin: Challenge Cancelled')
         .setDescription(
-          `An administrator has cancelled the challenge between **${challengerTeam?.name || 'Unknown Team'}** and **${defendingTeam?.name || 'Unknown Team'}**!`,
+          `An administrator has cancelled the challenge between **${challengerTeam?.team.name || 'Unknown Team'}** and **${defendingTeam?.team.name || 'Unknown Team'}**!`,
         )
         .addFields(
           { name: 'Challenge ID', value: challengeId, inline: false },
@@ -702,17 +746,21 @@ async function handleCancel(interaction: ChatInputCommandInteraction) {
       // DM team captains
       try {
         if (challengerTeam) {
-          const challengerCaptain = await interaction.client.users.fetch(challengerTeam.captainId);
+          const challengerCaptain = await interaction.client.users.fetch(
+            challengerTeam.team.captainId,
+          );
           await challengerCaptain.send({
-            content: `An administrator has cancelled your challenge against **${defendingTeam?.name}**`,
+            content: `An administrator has cancelled your challenge against **${defendingTeam?.team.name}**`,
             embeds: [embed],
           });
         }
 
         if (defendingTeam) {
-          const defendingCaptain = await interaction.client.users.fetch(defendingTeam.captainId);
+          const defendingCaptain = await interaction.client.users.fetch(
+            defendingTeam.team.captainId,
+          );
           await defendingCaptain.send({
-            content: `An administrator has cancelled your challenge against **${challengerTeam?.name}**`,
+            content: `An administrator has cancelled your challenge against **${challengerTeam?.team.name}**`,
             embeds: [embed],
           });
         }

@@ -1,20 +1,31 @@
-// src/events/guildDelete.ts - Handles guild leave event
+// src/events/guilds/guild-delete.events.ts - Handles guild leave event
 import { Guild } from 'discord.js';
-import { getDatabase } from '../../database/connection';
 import { logger } from '../../utils/logger.utils';
+import GuildConfig from '../../database/models/guild-config.model';
 
+/**
+ * Handles the event when the bot leaves a guild
+ *
+ * @param guild - The Discord guild the bot left
+ * @returns Promise resolving when the guild has been marked as inactive
+ *
+ * Actions:
+ * - Marks the guild as inactive in the database (for data retention)
+ * - Updates the updatedAt timestamp
+ */
 export async function guildDelete(guild: Guild): Promise<void> {
-  logger.info(`Left guild: ${guild.name} (${guild.id})`);
-
   try {
-    // Get the database instance
-    const db = getDatabase();
-    const guildConfigsCollection = db.collection('guildConfigs');
+    logger.info(`Left guild: ${guild.name} (${guild.id})`);
 
     // Mark the guild as inactive (preferred for data retention)
-    await guildConfigsCollection.updateOne(
+    await GuildConfig.updateOne(
       { guildId: guild.id },
-      { $set: { active: false, updatedAt: new Date() } },
+      {
+        $set: {
+          active: false,
+          updatedAt: new Date(),
+        },
+      },
     );
 
     logger.info(`Marked guild as inactive in database: ${guild.id}`);
