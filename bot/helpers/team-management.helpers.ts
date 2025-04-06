@@ -56,9 +56,7 @@ export const findTeam = async (
   if (!teamName) {
     // Find team user is part of
     return (
-      teams.find(
-        t => t.captain.toString() === userId || t.members.some(m => m.discordId === userId),
-      ) || null
+      teams.find(t => t.captainId === userId || t.members.some(m => m.discordId === userId)) || null
     );
   } else {
     // Find team by name
@@ -167,12 +165,17 @@ export const addPendingChallenges = async (
   embed: EmbedBuilder,
   teamTournament: ITeamTournament,
 ): Promise<void> => {
-  const pendingChallenges = await challengeService.getPendingChallenges(teamTournament._id.toString());
+  const pendingChallenges = await challengeService.getPendingChallenges(
+    teamTournament._id.toString(),
+  );
   if (pendingChallenges.length > 0) {
     embed.addFields({
       name: 'Pending Challenges',
       value: pendingChallenges
-        .map((challenge: IChallenge) => `vs ${challenge.defendingTeamTournament.team.name} (${challenge.status})`)
+        .map(
+          (challenge: IChallenge) =>
+            `vs ${challenge.defendingTeamTournament.team.name} (${challenge.status})`,
+        )
         .join('\n'),
     });
   }

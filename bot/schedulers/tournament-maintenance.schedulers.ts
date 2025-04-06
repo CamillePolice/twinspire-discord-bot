@@ -1,5 +1,6 @@
 import { Client, TextChannel } from 'discord.js';
 import { TournamentService } from '../services/tournament/tournament.services';
+import { ChallengeService } from '../services/tournament/challenge.services';
 import { logger } from '../utils/logger.utils';
 
 /**
@@ -8,12 +9,14 @@ import { logger } from '../utils/logger.utils';
 export class TournamentMaintenanceScheduler {
   private client: Client;
   private tournamentService: TournamentService;
+  private challengeService: ChallengeService;
   private maintenanceChannelId: string | null = null;
   private isRunning: boolean = false;
 
   constructor(client: Client) {
     this.client = client;
     this.tournamentService = new TournamentService();
+    this.challengeService = new ChallengeService();
   }
 
   /**
@@ -110,7 +113,7 @@ export class TournamentMaintenanceScheduler {
 
       // Get challenges with overdue responses
       const overdueResponses =
-        await this.tournamentService.getPastDueDefenderResponses(tournamentId);
+        await this.challengeService.getPastDueDefenderResponses(tournamentId);
 
       if (overdueResponses.length === 0) {
         logger.info(`No overdue challenge responses found for tournament ${tournament.name}`);
@@ -121,13 +124,17 @@ export class TournamentMaintenanceScheduler {
         `Found ${overdueResponses.length} overdue challenges in tournament ${tournament.name}`,
       );
 
-      // Get team details
-      const teams = await this.tournamentService.getTournamentStandings();
+      // Get team details with populated team information
+      const teams = await this.tournamentService.getTournamentStandings(tournamentId);
 
       // Process each overdue challenge
       for (const challenge of overdueResponses) {
-        const challengerTeam = teams.find(team => team.teamId === challenge.challengerTeamId);
-        const defendingTeam = teams.find(team => team.teamId === challenge.defendingTeamId);
+        const challengerTeam = teams.find(
+          team => team._id.toString() === challenge.challengerTeamTournament.toString(),
+        );
+        const defendingTeam = teams.find(
+          team => team._id.toString() === challenge.defendingTeamTournament.toString(),
+        );
 
         // Only auto-forfeit challenges that are more than 2 days past the deadline
         const createdDate = new Date(challenge.createdAt);
@@ -155,9 +162,9 @@ export class TournamentMaintenanceScheduler {
 
         try {
           // Submit forfeit
-          const success = await this.tournamentService.forfeitChallenge(
+          const success = await this.challengeService.forfeitChallenge(
             challenge.challengeId,
-            challenge.defendingTeamId,
+            challenge.defendingTeamTournament.toString(),
           );
 
           if (success) {
@@ -165,10 +172,10 @@ export class TournamentMaintenanceScheduler {
 
             // Send notification
             await this.sendNotification(
-              `⚠️ **Auto-Forfeit**: Challenge between ${challengerTeam?.name || 'Unknown Team'} and ${defendingTeam?.name || 'Unknown Team'} has been auto-forfeited due to no response from the defending team within the required timeframe.`,
+              `⚠️ **Auto-Forfeit**: Challenge between ${challengerTeam?.team?.name || 'Unknown Team'} and ${defendingTeam?.team?.name || 'Unknown Team'} has been auto-forfeited due to no response from the defending team within the required timeframe.`,
               challenge.challengeId,
-              challengerTeam?.captainId,
-              defendingTeam?.captainId,
+              challengerTeam?.team?.captainId,
+              defendingTeam?.team?.captainId,
             );
           } else {
             logger.error(`Failed to auto-forfeit challenge ${challenge.challengeId}`);

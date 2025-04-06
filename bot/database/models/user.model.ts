@@ -70,7 +70,7 @@ export interface IGuildAffiliation {
 
 // Interface for the document
 export interface IUser {
-  _id: Schema.Types.ObjectId;
+  _id?: Schema.Types.ObjectId;
   discordId: string;
   username: string;
   joinedAt: Date;

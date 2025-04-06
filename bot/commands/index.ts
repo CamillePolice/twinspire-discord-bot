@@ -28,16 +28,12 @@ const findCommandFiles = (dir: string): string[] => {
       // Recursively search subdirectories
       commandFiles.push(...findCommandFiles(filePath));
     } else {
-      // Filter for command files
+      // Filter for .builders.ts files only
       if (
-        (file.endsWith('.js') ||
-          (process.env.NODE_ENV === 'development' && file.endsWith('.ts'))) &&
-        !file.endsWith('index.js') &&
-        !file.endsWith('index.ts') &&
-        !file.endsWith('.test.js') &&
-        !file.endsWith('.test.ts') &&
-        !file.endsWith('.spec.js') &&
-        !file.endsWith('.spec.ts')
+        file.endsWith('.builders.ts') &&
+        !file.endsWith('index.builders.ts') &&
+        !file.endsWith('.test.builders.ts') &&
+        !file.endsWith('.spec.builders.ts')
       ) {
         commandFiles.push(filePath);
       }
@@ -49,7 +45,7 @@ const findCommandFiles = (dir: string): string[] => {
 
 // Load commands from files
 export const loadCommands = async () => {
-  const commandsPath = path.join(__dirname, '..', 'commands');
+  const commandsPath = path.join(__dirname);
   console.log(`LOG || loadCommands || commandsPath ->`, commandsPath);
 
   // Create commands directory if it doesn't exist
@@ -59,16 +55,15 @@ export const loadCommands = async () => {
 
   // Find all command files recursively
   const commandFiles = findCommandFiles(commandsPath);
+  console.log(`LOG || loadCommands || commandFiles ->`, commandFiles)
 
   for (const filePath of commandFiles) {
     try {
-      // Import the command module - for CommonJS we would use require
-      // For ESM, we need to handle this differently based on the environment
       const command = await import(filePath);
-
-      // Commands might be exported as default or as named exports
-      const commandModule = command.default || command;
-
+      
+      // Handle both default and named exports
+      const commandModule = command.default || Object.values(command)[0];
+      
       if (commandModule && 'data' in commandModule && 'execute' in commandModule) {
         commands.set(commandModule.data.name, commandModule);
         console.log(

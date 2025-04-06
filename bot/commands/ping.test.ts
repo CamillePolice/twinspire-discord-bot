@@ -1,5 +1,5 @@
 import { CommandInteraction, Client } from 'discord.js';
-import pingCommand from './ping';
+import { buildPingCommand } from './builders/ping.builders';
 
 // Correctly mock Discord.js objects
 jest.mock('discord.js', () => {
@@ -103,7 +103,7 @@ describe('Ping Command', () => {
 
   it('should reply with pong and latency information', async () => {
     // Execute the command
-    await pingCommand.execute(mockInteraction);
+    await buildPingCommand.execute(mockInteraction);
 
     // Check that reply was called with the correct message
     expect(replyMock).toHaveBeenCalledWith({ content: 'Pinging...', fetchReply: true });

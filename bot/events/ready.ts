@@ -2,11 +2,11 @@
 
 import { Client } from 'discord.js';
 import { loadCommands, registerCommands } from '../commands';
-import { syncGuildsWithDatabase } from '../guilds/sync-guild.guilds';
+import { syncGuildsWithDatabase } from '../events/guilds/guild-sync.events';
 import { logger } from '../utils/logger.utils';
-import { syncAllGuildMembers } from '../guilds/sync-members.guilds';
-import { TournamentMaintenanceScheduler } from '../schedulers/tournamentMaintenance';
-import { setMaintenanceScheduler } from '../commands/tournament/maintenance/maintenance.command';
+import { syncAllGuildMembers } from '../events/guilds/guild-members.events';
+import { TournamentMaintenanceScheduler } from '../schedulers/tournament-maintenance.schedulers';
+import { setMaintenanceScheduler } from '../commands/commands/maintenance.commands';
 
 export async function ready(client: Client): Promise<void> {
   if (!client.user) {

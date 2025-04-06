@@ -5,7 +5,8 @@ import {
   CacheType,
   PermissionFlagsBits,
 } from 'discord.js';
-import { getDatabase } from '../../database/connection';
+import User from '../../database/models/user.model';
+import GuildConfig from '../../database/models/guild-config.model';
 import { logger } from '../../utils/logger.utils';
 
 export default {
@@ -28,13 +29,8 @@ export default {
     try {
       const targetUser = interaction.options.getUser('user') || interaction.user;
 
-      // Get the database instance
-      const db = getDatabase();
-      const usersCollection = db.collection('users');
-      const guildConfigsCollection = db.collection('guildConfigs');
-
       // Get the user's data from MongoDB
-      const userData = await usersCollection.findOne({ discordId: targetUser.id });
+      const userData = await User.findOne({ discordId: targetUser.id });
 
       if (!userData || !userData.guilds || userData.guilds.length === 0) {
         await interaction.editReply(`No server data found for ${targetUser.username}.`);
@@ -58,12 +54,12 @@ export default {
       for (const guildInfo of guildsList) {
         try {
           // Try to get the guild name from our database
-          const guildConfig = await guildConfigsCollection.findOne({ guildId: guildInfo.guildId });
+          const guildConfig = await GuildConfig.findOne({ guildId: guildInfo.guildId });
 
           // Try to get the guild from the client cache
           const guild = interaction.client.guilds.cache.get(guildInfo.guildId);
 
-          const guildName = guildConfig?.name || guild?.name || 'Unknown Server';
+          const guildName = guildConfig?.guildName || guild?.name || 'Unknown Server';
 
           // Format join date
           const joinDate = `<t:${Math.floor(guildInfo.joinedAt.getTime() / 1000)}:R>`;

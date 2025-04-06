@@ -1,53 +1,15 @@
-// src/commands/maintenance.ts
-import {
-  ChatInputCommandInteraction,
-  SlashCommandBuilder,
-  PermissionFlagsBits,
-  ChannelType,
-  TextChannel,
-  EmbedBuilder,
-} from 'discord.js';
-import { logger } from '../../../utils/logger.utils';
-import { TournamentMaintenanceScheduler } from '../../../schedulers/tournamentMaintenance';
+import { ChatInputCommandInteraction, TextChannel, EmbedBuilder } from 'discord.js';
+import { logger } from '../../utils/logger.utils';
+import { TournamentMaintenanceScheduler } from '../../schedulers/tournament-maintenance.schedulers';
 
-// Reference to the maintenance scheduler instance
-// This will be initialized in ready.ts when the bot starts
 let maintenanceScheduler: TournamentMaintenanceScheduler | null = null;
 
 export function setMaintenanceScheduler(scheduler: TournamentMaintenanceScheduler): void {
   maintenanceScheduler = scheduler;
 }
 
-export default {
-  data: new SlashCommandBuilder()
-    .setName('maintenance')
-    .setDescription('Configure tournament maintenance settings')
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    // Set maintenance notification channel
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('set_channel')
-        .setDescription('Set the channel for tournament maintenance notifications')
-        .addChannelOption(option =>
-          option
-            .setName('channel')
-            .setDescription('The channel to send maintenance notifications to')
-            .setRequired(true)
-            .addChannelTypes(ChannelType.GuildText),
-        ),
-    )
-    // Run maintenance manually
-    .addSubcommand(subcommand =>
-      subcommand.setName('run').setDescription('Run tournament maintenance tasks manually'),
-    )
-    // View maintenance settings
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('status')
-        .setDescription('View the current maintenance settings and status'),
-    ),
-
-  async execute(interaction: ChatInputCommandInteraction) {
+export const handleMaintenanceCommand = {
+  execute: async (interaction: ChatInputCommandInteraction) => {
     const subcommand = interaction.options.getSubcommand();
 
     try {
@@ -83,16 +45,12 @@ export default {
   },
 };
 
-/**
- * Handle set_channel subcommand
- */
 async function handleSetChannel(
   interaction: ChatInputCommandInteraction,
   scheduler: TournamentMaintenanceScheduler,
 ): Promise<void> {
   const channel = interaction.options.getChannel('channel', true) as TextChannel;
 
-  // Check if bot has permission to send messages in this channel
   const me = interaction.guild?.members.me;
   if (!me) {
     await interaction.reply({
@@ -118,15 +76,11 @@ async function handleSetChannel(
     ephemeral: false,
   });
 
-  // Send a test message to the channel
   await channel.send({
     content: `🔧 This channel has been set as the tournament maintenance notification channel by <@${interaction.user.id}>.`,
   });
 }
 
-/**
- * Handle run subcommand
- */
 async function handleRunMaintenance(
   interaction: ChatInputCommandInteraction,
   scheduler: TournamentMaintenanceScheduler,
@@ -134,7 +88,6 @@ async function handleRunMaintenance(
   await interaction.deferReply();
 
   try {
-    // Run maintenance directly
     await scheduler['runMaintenance']();
 
     await interaction.editReply({
@@ -149,9 +102,6 @@ async function handleRunMaintenance(
   }
 }
 
-/**
- * Handle status subcommand
- */
 async function handleMaintenanceStatus(
   interaction: ChatInputCommandInteraction,
   scheduler: TournamentMaintenanceScheduler,

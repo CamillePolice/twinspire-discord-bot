@@ -4,7 +4,7 @@ import {
   PermissionFlagsBits,
   CacheType,
 } from 'discord.js';
-import { syncGuildMembers } from '../../guilds/sync-members.guilds';
+import { syncGuildMembers } from '../../events/guilds/guild-members.events';
 import { logger } from '../../utils/logger.utils';
 
 export default {

@@ -41,12 +41,8 @@ export class TournamentService {
    * @returns Tournament object or null if not found
    */
   async getTournamentById(tournamentId: string): Promise<ITournament | null> {
-    try {
-      return await Tournament.findOne({ tournamentId });
-    } catch (error) {
-      logger.error(`Error fetching tournament ${tournamentId}:`, error);
-      throw error;
-    }
+    // TODO: Implement actual database query
+    return null;
   }
 
   /**
@@ -100,17 +96,20 @@ export class TournamentService {
    */
   async getTournamentStandings(tournamentId: string): Promise<ITeamTournament[]> {
     try {
-      // Find TeamTournament entries for the specified tournament
-      const standings = await TeamTournament.find({ tournament: tournamentId })
-        .sort({ tier: 1, prestige: -1 })
-        // Populate with team details
+      // Find the tournament document to get its MongoDB _id
+      const tournament = await Tournament.findOne({ tournamentId });
+      if (!tournament) {
+        logger.error(`Tournament ${tournamentId} not found`);
+        return [];
+      }
+
+      // Find all team tournament entries for this tournament, sorted by tier and prestige
+      return await TeamTournament.find({ tournament: tournament._id })
         .populate({
           path: 'team',
-          select: 'name captain',
-        });
-
-      logger.info(`Fetched standings for tournament ${tournamentId}`);
-      return standings;
+          select: 'name captainId',
+        })
+        .sort({ tier: 1, prestige: -1 });
     } catch (error) {
       logger.error(`Error fetching tournament standings for ${tournamentId}:`, error);
       throw error;

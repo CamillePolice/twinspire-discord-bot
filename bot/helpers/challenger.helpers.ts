@@ -140,7 +140,7 @@ export const calculateChallengeOutcome = (
     defending: defendingTeamTournament.tier,
   };
 
-  const isChallengerWinner = winnerTeamId === challenge.challengerTeamId;
+  const isChallengerWinner = winnerTeamId === challenge.challengerTeamTournament.toString();
 
   const protectionDays = tournament.rules.protectionDaysAfterDefense;
   let protectedUntil = undefined;

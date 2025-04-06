@@ -5,6 +5,7 @@ const teamTournamentSchema: Schema = new Schema(
   {
     team: {
       type: ObjectId,
+      ref: 'Team',
       required: true,
     },
     tournament: {
@@ -47,7 +48,10 @@ const teamTournamentSchema: Schema = new Schema(
 // Interface for the document
 export interface ITeamTournament {
   _id: Schema.Types.ObjectId;
-  team: Schema.Types.ObjectId;
+  team: Schema.Types.ObjectId & {
+    name: string;
+    captainId: string;
+  };
   tournament: Schema.Types.ObjectId;
   tier: number;
   prestige: number;

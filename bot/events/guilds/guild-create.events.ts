@@ -1,6 +1,6 @@
 import { Guild } from 'discord.js';
 import { logger } from '../../utils/logger.utils';
-import { syncGuildMembers } from '../../guilds/sync-members.guilds';
+import { syncGuildMembers } from '../../events/guilds/guild-members.events';
 import GuildConfig from '../../database/models/guild-config.model';
 
 /**

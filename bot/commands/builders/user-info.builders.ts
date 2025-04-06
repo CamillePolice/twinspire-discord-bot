@@ -1,13 +1,11 @@
-// src/commands/userinfo.ts
 import {
   ChatInputCommandInteraction,
   SlashCommandBuilder,
   EmbedBuilder,
   CacheType,
 } from 'discord.js';
-import { getDatabase } from '../database/connection';
-import { logger } from '../utils/logger';
-import { GuildAffiliation } from '../database/models';
+import { logger } from '../../utils/logger.utils';
+import User, { IGuildAffiliation } from '../../database/models/user.model';
 
 export default {
   data: new SlashCommandBuilder()
@@ -39,12 +37,8 @@ export default {
         return;
       }
 
-      // Get the database instance
-      const db = getDatabase();
-      const usersCollection = db.collection('users');
-
-      // Get the user's data from MongoDB
-      const userData = await usersCollection.findOne({
+      // Get the user's data from the database
+      const userData = await User.findOne({
         discordId: targetUser.id,
         'guilds.guildId': interaction.guild.id,
       });
@@ -93,7 +87,7 @@ export default {
       // Add database information if available
       if (userData) {
         const guildInfo = userData.guilds.find(
-          (g: GuildAffiliation) => g.guildId === interaction.guild?.id,
+          (g: IGuildAffiliation) => g.guildId === interaction.guild?.id,
         );
 
         if (guildInfo) {
@@ -143,7 +137,7 @@ export default {
             embed.addFields({ name: 'Role Discrepancies', value: discrepancyText, inline: false });
 
             // Update the database with current roles
-            await usersCollection.updateOne(
+            await User.updateOne(
               {
                 discordId: targetUser.id,
                 'guilds.guildId': interaction.guild.id,

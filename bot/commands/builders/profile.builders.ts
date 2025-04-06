@@ -4,22 +4,8 @@ import {
   EmbedBuilder,
   CacheType,
 } from 'discord.js';
-import { getDatabase } from '../database/connection';
-import { logger } from '../utils/logger';
-import { WithId, Document } from 'mongodb';
-
-// Define interface for user data
-interface UserData {
-  discordId: string;
-  username: string;
-  joinedAt: Date;
-  lastActive: Date;
-  experience: number;
-  level: number;
-}
-
-// Type for MongoDB document with _id
-type UserDocument = WithId<Document> & UserData;
+import { logger } from '../../utils/logger.utils';
+import User, { IUser } from '../../database/models/user.model';
 
 export default {
   data: new SlashCommandBuilder()
@@ -39,49 +25,28 @@ export default {
     try {
       const targetUser = interaction.options.getUser('user') || interaction.user;
 
-      // Get the database instance
-      const db = getDatabase();
-      const usersCollection = db.collection('users');
-
-      // Get the user's data from MongoDB
-      let userData: UserDocument | null = (await usersCollection.findOne({
+      // Find the user's data from the database
+      let userData: IUser | null = await User.findOne({
         discordId: targetUser.id,
-      })) as UserDocument | null;
+      });
 
       // If user doesn't exist in the database, create them
       if (!userData) {
         logger.info(`Creating new user profile for ${targetUser.username} (${targetUser.id})`);
 
         // Create new user data
-        const newUser: UserData = {
+        userData = await User.create({
           discordId: targetUser.id,
           username: targetUser.username,
           joinedAt: new Date(),
           lastActive: new Date(),
           experience: 0,
           level: 1,
-        };
-
-        // Insert the new user
-        const result = await usersCollection.insertOne(newUser);
-        if (result.acknowledged) {
-          // Retrieve the newly created user
-          userData = (await usersCollection.findOne({
-            _id: result.insertedId,
-          })) as UserDocument | null;
-
-          if (!userData) {
-            throw new Error('Failed to retrieve user after creation');
-          }
-        } else {
-          throw new Error('Failed to create user in database');
-        }
+          guilds: [], // Initialize with empty guilds array
+        });
       } else {
         // Update last active timestamp
-        await usersCollection.updateOne(
-          { discordId: targetUser.id },
-          { $set: { lastActive: new Date() } },
-        );
+        await User.updateOne({ discordId: targetUser.id }, { $set: { lastActive: new Date() } });
       }
 
       // Create the profile embed
