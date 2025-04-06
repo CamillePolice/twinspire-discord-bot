@@ -38,8 +38,8 @@ const teamSchema: Schema = new Schema(
       type: String,
       required: true,
     },
-    captain: {
-      type: ObjectId,
+    captainId: {
+      type: String,
       required: true,
     },
     members: {

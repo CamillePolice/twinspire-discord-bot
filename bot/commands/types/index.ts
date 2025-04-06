@@ -30,7 +30,7 @@ export interface SubcommandBuilder {
 
 export interface TournamentCommandBuilder {
   data: SlashCommandBuilder;
-  execute: (interaction: CommandInteraction) => Promise<void>;
+  execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
 }
 
 export interface TournamentCommandHandler {

@@ -1,6 +1,7 @@
-import { SlashCommandBuilder, SlashCommandSubcommandBuilder, CommandInteraction } from 'discord.js';
+import { SlashCommandBuilder, SlashCommandSubcommandBuilder } from 'discord.js';
 import { TournamentCommandBuilder, SubcommandBuilder } from '../../types';
 import { Role } from '../../../database/enums/role.enums';
+import { handleTeamCommand } from '../../handlers/team.handlers';
 
 const buildCreateTeamSubcommand: SubcommandBuilder = {
   build: (subcommand: SlashCommandSubcommandBuilder) =>
@@ -8,7 +9,7 @@ const buildCreateTeamSubcommand: SubcommandBuilder = {
       .setName('create')
       .setDescription('Create a new team')
       .addStringOption(option =>
-        option.setName('name').setDescription('Team name').setRequired(true),
+        option.setName('team_name').setDescription('Team name').setRequired(true),
       ),
 };
 
@@ -195,11 +196,5 @@ export const buildTeamCommand: TournamentCommandBuilder = {
     .addSubcommand(buildProposeDatesSubcommand.build)
     .addSubcommand(buildScheduleChallengeSubcommand.build)
     .addSubcommand(buildSubmitResultSubcommand.build) as SlashCommandBuilder,
-  execute: async (interaction: CommandInteraction) => {
-    // Implementation will be added in the commands file
-    await interaction.reply({
-      content: 'This command is handled by the team commands handler.',
-      ephemeral: true,
-    });
-  },
+  execute: handleTeamCommand.execute,
 };
