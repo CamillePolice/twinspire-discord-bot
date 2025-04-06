@@ -185,7 +185,7 @@ const buildSubmitResultSubcommand: SubcommandBuilder = {
 export const buildTeamCommand: TournamentCommandBuilder = {
   data: new SlashCommandBuilder()
     .setName('team')
-    .setDescription('Team management commands')
+    .setDescription('Team commands')
     .addSubcommand(buildCreateTeamSubcommand.build)
     .addSubcommand(buildViewTeamSubcommand.build)
     .addSubcommand(buildAddMemberSubcommand.build)

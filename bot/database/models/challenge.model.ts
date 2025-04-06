@@ -114,7 +114,7 @@ export interface IChallenge {
   _id: Schema.Types.ObjectId;
   challengeId: string;
   tournamentId: string;
-  challengerTeamTournament: Schema.Types.ObjectId;
+  challengerTeamTournament: Schema.Types.ObjectId & { team: { name: string } };
   defendingTeamTournament: Schema.Types.ObjectId & { team: { name: string } };
   status: 'pending' | 'scheduled' | 'completed' | 'cancelled' | 'forfeited';
   scheduledDate?: Date;

@@ -2,7 +2,15 @@ import { logger } from '../../utils/logger.utils';
 import Challenge, { IChallenge } from '../../database/models/challenge.model';
 import { calculateForfeitResult } from '../../helpers/tournament.helpers';
 import { ChallengeStatus } from '../../database/enums/challenge.enums';
-import { calculateChallengeOutcome, checkExistingChallenges, createChallengeRecord, updateTeamAfterChallenge, validateChallengeLimit, validateProtectionPeriod, validateTierDifference } from '../../helpers/challenger.helpers';
+import {
+  calculateChallengeOutcome,
+  checkExistingChallenges,
+  createChallengeRecord,
+  updateTeamAfterChallenge,
+  validateChallengeLimit,
+  validateProtectionPeriod,
+  validateTierDifference,
+} from '../../helpers/challenger.helpers';
 import { validateTournament } from '../../helpers/challenger.helpers';
 import { validateTeams } from '../../helpers/challenger.helpers';
 import { ChallengeResult } from '../../types/challenge-result.types';
@@ -11,7 +19,6 @@ import { ChallengeResult } from '../../types/challenge-result.types';
  * Service class for managing team challenges within tournaments
  */
 export class ChallengeService {
-
   constructor() {}
 
   /**
@@ -40,8 +47,7 @@ export class ChallengeService {
       const { challengerTeamTournament, defendingTeamTournament } = teamValidation;
 
       // Run all validations
-      if (!validateTierDifference(challengerTeamTournament, defendingTeamTournament))
-        return null;
+      if (!validateTierDifference(challengerTeamTournament, defendingTeamTournament)) return null;
       if (!validateProtectionPeriod(defendingTeamTournament)) return null;
       if (existingChallenge) {
         logger.error(
@@ -91,10 +97,7 @@ export class ChallengeService {
   async getPendingChallengesForTeam(teamId: string): Promise<IChallenge[]> {
     try {
       return await Challenge.find({
-        $or: [
-          { challengerTeamTournament: teamId },
-          { defendingTeamTournament: teamId }
-        ],
+        $or: [{ challengerTeamTournament: teamId }, { defendingTeamTournament: teamId }],
         status: { $in: [ChallengeStatus.PENDING, ChallengeStatus.SCHEDULED] },
       });
     } catch (error) {
@@ -189,7 +192,11 @@ export class ChallengeService {
       // Validate tournament and teams
       const [tournament, teamValidation] = await Promise.all([
         validateTournament(tournamentId),
-        validateTeams(challenge.challengerTeamTournament.toString(), challenge.defendingTeamTournament.toString(), tournamentId),
+        validateTeams(
+          challenge.challengerTeamTournament.toString(),
+          challenge.defendingTeamTournament.toString(),
+          tournamentId,
+        ),
       ]);
 
       if (!tournament || !teamValidation) return false;
@@ -295,7 +302,9 @@ export class ChallengeService {
       }
 
       const isChallenger = forfeiterTeamId === challenge.challengerTeamTournament.toString();
-      const winnerTeamId = isChallenger ? challenge.defendingTeamTournament.toString() : challenge.challengerTeamTournament.toString();
+      const winnerTeamId = isChallenger
+        ? challenge.defendingTeamTournament.toString()
+        : challenge.challengerTeamTournament.toString();
 
       // Use the calculateForfeitResult helper function
       const forfeitResult = calculateForfeitResult(tournament, winnerTeamId, forfeiterTeamId);
@@ -327,6 +336,13 @@ export class ChallengeService {
         status: { $in: ['pending', 'scheduled'] },
       })
         .populate({
+          path: 'challengerTeamTournament',
+          populate: {
+            path: 'team',
+            select: 'name',
+          },
+        })
+        .populate({
           path: 'defendingTeamTournament',
           populate: {
             path: 'team',
@@ -334,7 +350,10 @@ export class ChallengeService {
           },
         });
     } catch (error) {
-      logger.error(`Error fetching pending challenges for team tournament ${teamTournamentId}:`, error);
+      logger.error(
+        `Error fetching pending challenges for team tournament ${teamTournamentId}:`,
+        error,
+      );
       throw error;
     }
   }

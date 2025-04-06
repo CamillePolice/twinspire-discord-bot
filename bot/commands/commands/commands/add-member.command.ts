@@ -1,44 +1,114 @@
 import { ChatInputCommandInteraction } from 'discord.js';
 import { logger } from '../../../utils/logger.utils';
 import Team from '../../../database/models/team.model';
+import { Role } from '../../../database/enums/role.enums';
+import {
+  createSuccessEmbed,
+  createErrorEmbed,
+  createWarningEmbed,
+  addUserAvatar,
+  getRoleIcon,
+} from '../../../helpers/message.helpers';
 
 export async function handleAddMember(interaction: ChatInputCommandInteraction): Promise<void> {
   await interaction.deferReply();
 
   try {
-    const teamId = interaction.options.getString('team_id', true);
-    const memberId = interaction.options.getUser('member', true);
+    // Get the user and optional role from the interaction
+    const user = interaction.options.getUser('user', true);
+    const role = interaction.options.getString('role');
 
-    const team = await Team.findOne({ teamId });
-    if (!team) {
-      await interaction.editReply('Team not found');
-      return;
-    }
-
-    const isCaptain = team.members.some(
-      member => member.discordId === interaction.user.id && member.isCaptain,
+    logger.info(
+      `Attempting to add ${user.username} (${user.id}) to a team with role: ${role || 'Not specified'}`,
     );
 
-    if (!isCaptain) {
-      await interaction.editReply('Only team captains can add members');
+    // Check if the user is already in a team
+    const existingTeamMember = await Team.findOne({
+      'members.discordId': user.id,
+    });
+
+    if (existingTeamMember) {
+      const warningEmbed = createWarningEmbed(
+        'User Already in Team',
+        `${user.username} is already a member of team **${existingTeamMember.name}**`,
+      );
+
+      await interaction.editReply({ embeds: [warningEmbed] });
       return;
     }
 
-    if (team.members.some(member => member.discordId === memberId.id)) {
-      await interaction.editReply('Member is already in the team');
+    // Find the team where the interaction user is a captain
+    const captainTeam = await Team.findOne({
+      members: {
+        $elemMatch: {
+          discordId: interaction.user.id,
+          isCaptain: true,
+        },
+      },
+    });
+
+    if (!captainTeam) {
+      const errorEmbed = createErrorEmbed(
+        'Permission Denied',
+        'You must be a team captain to add members.',
+      );
+
+      await interaction.editReply({ embeds: [errorEmbed] });
       return;
     }
 
-    team.members.push({
-      discordId: memberId.id,
-      username: memberId.username,
+    // Validate the role if provided
+    if (role && !Object.values(Role).includes(role as Role)) {
+      const validRoles = Object.values(Role).join(', ');
+      const errorEmbed = createErrorEmbed(
+        'Invalid Role',
+        `"${role}" is not a valid team role.`,
+        `Valid roles: ${validRoles}`,
+      );
+
+      await interaction.editReply({ embeds: [errorEmbed] });
+      return;
+    }
+
+    // Add the new member to the team
+    captainTeam.members.push({
+      discordId: user.id,
+      username: user.username,
+      role: (role as Role) || undefined,
       isCaptain: false,
     });
 
-    await team.save();
-    await interaction.editReply(`Added ${memberId.username} to the team`);
+    await captainTeam.save();
+
+    logger.info(
+      `Added ${user.username} (${user.id}) to team ${captainTeam.name} with role: ${role || 'Not specified'}`,
+    );
+
+    // Format role display with icon if specified
+    const roleDisplay = role ? `${getRoleIcon(role as Role)} ${role}` : 'Not specified';
+
+    // Create success embed
+    const successEmbed = createSuccessEmbed(
+      'Member Added',
+      `Successfully added ${user.username} to team **${captainTeam.name}**`,
+    ).addFields(
+      { name: 'Member', value: `<@${user.id}>`, inline: true },
+      { name: 'Role', value: roleDisplay, inline: true },
+    );
+
+    // Add user avatar if available
+    addUserAvatar(successEmbed, user);
+
+    await interaction.editReply({ embeds: [successEmbed] });
   } catch (error) {
     logger.error('Error adding member:', error as Error);
-    await interaction.editReply('An error occurred while adding the member');
+
+    const errorEmbed = createErrorEmbed(
+      'Error Adding Member',
+      'An error occurred while adding the member to your team.',
+      'Please try again later or contact an administrator if the problem persists.',
+    );
+
+    await interaction.editReply({ embeds: [errorEmbed] });
   }
 }
