@@ -80,6 +80,10 @@ const challengeSchema: Schema = new Schema(
         type: Number,
       },
     },
+    castDemand: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
@@ -123,6 +127,7 @@ export interface IChallenge {
   tierBefore: ITier;
   tierAfter?: ITier;
   prestigeAwarded?: IPrestige;
+  castDemand: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

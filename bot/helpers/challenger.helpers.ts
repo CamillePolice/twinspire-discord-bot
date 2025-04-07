@@ -98,6 +98,7 @@ export const createChallengeRecord = async (
   defendingTier: number,
   challengerTeamTournament: Schema.Types.ObjectId,
   defendingTeamTournament: Schema.Types.ObjectId,
+  castDemand: boolean = false,
 ): Promise<IChallenge> => {
   const challenge = new Challenge({
     challengeId: uuidv4(),
@@ -111,6 +112,7 @@ export const createChallengeRecord = async (
       challenger: challengerTier,
       defending: defendingTier,
     },
+    castDemand,
     createdAt: new Date(),
     updatedAt: new Date(),
   });

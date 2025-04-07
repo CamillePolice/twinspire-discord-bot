@@ -181,6 +181,12 @@ export async function handleScheduleChallenge(
           return;
         }
 
+        // Find the "Caster" role
+        const casterRole = guild.roles.cache.find(role => role.name === 'Caster');
+        if (!casterRole) {
+          logger.warn('Could not find "Caster" role for challenge notification');
+        }
+
         // Create a more detailed embed for the public announcement
         const publicEmbed = createChallengeEmbed(
           challengeId,
@@ -205,8 +211,20 @@ export async function handleScheduleChallenge(
           },
         );
 
-        // Send the announcement to the "défis" channel
-        await defisChannel.send({ embeds: [publicEmbed] });
+        // Add cast demand information if applicable
+        if (challenge.castDemand) {
+          publicEmbed.addFields({
+            name: 'Cast Demand',
+            value: `${StatusIcons.INFO} This is a cast demand challenge.`,
+          });
+        }
+
+        // Send the announcement to the "défis" channel with Caster role ping if it's a cast demand
+        if (challenge.castDemand && casterRole) {
+          await defisChannel.send({ content: `<@&${casterRole.id}>`, embeds: [publicEmbed] });
+        } else {
+          await defisChannel.send({ embeds: [publicEmbed] });
+        }
         logger.info(`Sent challenge announcement to "défis" channel for challenge ${challengeId}`);
       } catch (error) {
         logger.error('Error sending announcement to "défis" channel:', error as Error);

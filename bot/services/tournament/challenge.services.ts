@@ -36,12 +36,14 @@ export class ChallengeService {
    * @param challengerTeamId - ID of the team initiating the challenge
    * @param defendingTeamId - ID of the team being challenged
    * @param tournamentId - ID of the tournament
+   * @param castDemand - Indicates whether the challenge is a cast demand
    * @returns The created challenge object or null if validation fails
    */
   async createChallenge(
     challengerTeamId: string,
     defendingTeamId: string,
     tournamentId: string,
+    castDemand: boolean = false,
   ): Promise<IChallenge | null> {
     try {
       // Reset validation error
@@ -59,13 +61,13 @@ export class ChallengeService {
       }
 
       const { challengerTeamTournament, defendingTeamTournament } = teamValidation;
-      
+
       // Check for existing challenges
       const existingChallenge = await checkExistingChallenges(
         challengerTeamTournament._id,
         defendingTeamTournament._id,
       );
-      
+
       // Run all validations
       if (!validateTierDifference(challengerTeamTournament, defendingTeamTournament)) {
         this.lastValidationError = `Cannot challenge: Tiers are not adjacent. Challenger: ${challengerTeamTournament.tier}, Defending: ${defendingTeamTournament.tier}`;
@@ -94,10 +96,11 @@ export class ChallengeService {
         defendingTeamTournament.tier,
         challengerTeamTournament._id,
         defendingTeamTournament._id,
+        castDemand,
       );
 
-      console.log("test")
-      console.log(`LOG || challenge ->`, challenge)
+      console.log('test');
+      console.log(`LOG || challenge ->`, challenge);
 
       return challenge;
     } catch (error) {

@@ -16,6 +16,7 @@ export async function handleChallenge(interaction: ChatInputCommandInteraction):
   try {
     const defendingTeamId = interaction.options.getString('defending_team', true);
     const tournamentId = interaction.options.getString('tournament_id', true);
+    const castDemand = interaction.options.getBoolean('cast_demand') || false;
 
     // Get the challenger team (current user's team)
     const teams = await Team.find({
@@ -53,6 +54,7 @@ export async function handleChallenge(interaction: ChatInputCommandInteraction):
       challengerTeam.teamId,
       defendingTeamId,
       tournamentId,
+      castDemand,
     );
 
     if (challenge) {
@@ -68,6 +70,13 @@ export async function handleChallenge(interaction: ChatInputCommandInteraction):
           value: 'The defending team should propose dates using `/team-challenge propose_dates`',
         },
       );
+
+      if (challenge.castDemand) {
+        embed.addFields({
+          name: 'Cast Demand',
+          value: `${StatusIcons.INFO} This is a cast demand challenge.`,
+        });
+      }
 
       await interaction.editReply({ embeds: [embed] });
 
@@ -90,6 +99,13 @@ export async function handleChallenge(interaction: ChatInputCommandInteraction):
             value: `[Click here to view the challenge message](${challengeMessage.url})\n\nUse \`/team-challenge propose_dates\` to propose match dates`,
           },
         );
+
+        if (challenge.castDemand) {
+          captainEmbed.addFields({
+            name: 'Cast Demand',
+            value: `${StatusIcons.INFO} This is a cast demand challenge.`,
+          });
+        }
 
         await defendingCaptainUser.send({ embeds: [captainEmbed] });
       } catch (error) {
