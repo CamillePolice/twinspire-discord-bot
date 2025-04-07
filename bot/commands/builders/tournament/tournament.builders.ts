@@ -2,7 +2,6 @@ import {
   SlashCommandBuilder,
   SlashCommandSubcommandBuilder,
   PermissionFlagsBits,
-  CommandInteraction,
 } from 'discord.js';
 import { TournamentCommandBuilder, SubcommandBuilder } from '../../types';
 import { TournamentFormat } from '../../../database/enums/tournament-format.enums';

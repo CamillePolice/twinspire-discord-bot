@@ -41,8 +41,12 @@ export class TournamentService {
    * @returns Tournament object or null if not found
    */
   async getTournamentById(tournamentId: string): Promise<ITournament | null> {
-    // TODO: Implement actual database query
-    return null;
+    try {
+      return await Tournament.findOne({ tournamentId });
+    } catch (error) {
+      logger.error(`Error fetching tournament by ID ${tournamentId}:`, error);
+      throw error;
+    }
   }
 
   /**
