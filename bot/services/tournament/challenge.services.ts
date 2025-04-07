@@ -19,7 +19,16 @@ import { ChallengeResult } from '../../types/challenge-result.types';
  * Service class for managing team challenges within tournaments
  */
 export class ChallengeService {
+  private lastValidationError: string | null = null;
+
   constructor() {}
+
+  /**
+   * Gets the last validation error that occurred during challenge creation
+   */
+  getLastValidationError(): string | null {
+    return this.lastValidationError;
+  }
 
   /**
    * Creates a new challenge between two teams in a tournament
@@ -35,28 +44,46 @@ export class ChallengeService {
     tournamentId: string,
   ): Promise<IChallenge | null> {
     try {
+      // Reset validation error
+      this.lastValidationError = null;
+
       // Validate tournament and teams in parallel for better performance
-      const [teamValidation, tournament, existingChallenge] = await Promise.all([
+      const [teamValidation, tournament] = await Promise.all([
         validateTeams(challengerTeamId, defendingTeamId, tournamentId),
         validateTournament(tournamentId),
-        checkExistingChallenges(challengerTeamId, defendingTeamId),
       ]);
 
-      if (!teamValidation || !tournament) return null;
-
-      const { challengerTeamTournament, defendingTeamTournament } = teamValidation;
-      
-      // Run all validations
-      if (!validateTierDifference(challengerTeamTournament, defendingTeamTournament)) return null;
-      if (!validateProtectionPeriod(defendingTeamTournament)) return null;
-      if (existingChallenge) {
-        logger.error(
-          `Challenge already exists between these teams (${existingChallenge.challengeId})`,
-        );
+      if (!teamValidation || !tournament) {
+        this.lastValidationError = 'One or both teams are not part of the tournament.';
         return null;
       }
 
-      if (!(await validateChallengeLimit(challengerTeamId, tournament))) return null;
+      const { challengerTeamTournament, defendingTeamTournament } = teamValidation;
+      
+      // Check for existing challenges
+      const existingChallenge = await checkExistingChallenges(
+        challengerTeamTournament._id,
+        defendingTeamTournament._id,
+      );
+      
+      // Run all validations
+      if (!validateTierDifference(challengerTeamTournament, defendingTeamTournament)) {
+        this.lastValidationError = `Cannot challenge: Tiers are not adjacent. Challenger: ${challengerTeamTournament.tier}, Defending: ${defendingTeamTournament.tier}`;
+        return null;
+      }
+      if (!validateProtectionPeriod(defendingTeamTournament)) {
+        this.lastValidationError = `Cannot challenge: Defending team is protected until ${defendingTeamTournament.protectedUntil}`;
+        return null;
+      }
+      if (existingChallenge) {
+        this.lastValidationError = `Cannot challenge: An existing challenge (${existingChallenge.challengeId}) is already pending between these teams.`;
+        return null;
+      }
+
+      if (!(await validateChallengeLimit(challengerTeamId, tournament))) {
+        this.lastValidationError = `Cannot challenge: You have reached the monthly challenge limit of ${tournament.rules.maxChallengesPerMonth}.`;
+        return null;
+      }
 
       // Create and save challenge
       const challenge = await createChallengeRecord(
@@ -107,7 +134,7 @@ export class ChallengeService {
         status: { $in: [ChallengeStatus.PENDING, ChallengeStatus.SCHEDULED] },
       });
     } catch (error) {
-      logger.error(`Error fetching pending challenges for team ${teamId}:`, error);
+      logger.error(`Error fetching pending challesnges for team ${teamId}:`, error);
       throw error;
     }
   }

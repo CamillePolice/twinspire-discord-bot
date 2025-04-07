@@ -22,12 +22,12 @@ const tournamentService = new TournamentService();
  * Check for existing pending/scheduled challenges between teams
  */
 export const checkExistingChallenges = async (
-  challengerTeamId: string,
-  defendingTeamId: string,
+  challengerTeamTournament: Schema.Types.ObjectId,
+  defendingTeamTournament: Schema.Types.ObjectId,
 ): Promise<IChallenge | null> => {
   return Challenge.findOne({
-    challengerTeamId,
-    defendingTeamId,
+    challengerTeamTournament,
+    defendingTeamTournament,
     status: { $in: [ChallengeStatus.PENDING, ChallengeStatus.SCHEDULED] },
   });
 };

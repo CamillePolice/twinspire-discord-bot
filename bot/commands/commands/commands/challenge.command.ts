@@ -97,11 +97,18 @@ export async function handleChallenge(interaction: ChatInputCommandInteraction):
         // Don't fail the challenge if DM fails
       }
     } else {
-      const embed = createErrorEmbed(
-        'Challenge Error',
-        'Failed to create challenge.',
-        'Please verify that all requirements are met:\n• You must be one tier below the defender\n• The defending team must not be protected\n• You cannot have an existing challenge with this team\n• You must not exceed the monthly challenge limit',
-      );
+      // Get the specific validation error from the service
+      const validationError = challengeService.getLastValidationError();
+      let errorMessage = 'Failed to create challenge.';
+
+      if (validationError) {
+        errorMessage = validationError;
+      } else {
+        errorMessage =
+          'Please verify that all requirements are met:\n• You must be one tier below the defender\n• The defending team must not be protected\n• You cannot have an existing challenge with this team\n• You must not exceed the monthly challenge limit';
+      }
+
+      const embed = createErrorEmbed('Challenge Error', errorMessage);
 
       await interaction.editReply({ embeds: [embed] });
     }
