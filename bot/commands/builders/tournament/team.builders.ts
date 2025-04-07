@@ -91,7 +91,10 @@ const buildTransferCaptainSubcommand: SubcommandBuilder = {
       .setName('transfer_captain')
       .setDescription('Transfer the captain role to another team member')
       .addUserOption(option =>
-        option.setName('user').setDescription('User to transfer captain role to').setRequired(true),
+        option
+          .setName('new_captain')
+          .setDescription('User to transfer captain role to')
+          .setRequired(true),
       ),
 };
 
