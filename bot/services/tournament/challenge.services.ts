@@ -45,6 +45,8 @@ export class ChallengeService {
       if (!teamValidation || !tournament) return null;
 
       const { challengerTeamTournament, defendingTeamTournament } = teamValidation;
+      console.log(`LOG || defendingTeamTournament ->`, defendingTeamTournament)
+      console.log(`LOG || challengerTeamTournament ->`, challengerTeamTournament)
 
       // Run all validations
       if (!validateTierDifference(challengerTeamTournament, defendingTeamTournament)) return null;
@@ -55,6 +57,7 @@ export class ChallengeService {
         );
         return null;
       }
+
       if (!(await validateChallengeLimit(challengerTeamId, tournament))) return null;
 
       // Create and save challenge
@@ -64,7 +67,12 @@ export class ChallengeService {
         defendingTeamId,
         challengerTeamTournament.tier,
         defendingTeamTournament.tier,
+        challengerTeamTournament._id,
+        defendingTeamTournament._id,
       );
+
+      console.log("test")
+      console.log(`LOG || challenge ->`, challenge)
 
       return challenge;
     } catch (error) {

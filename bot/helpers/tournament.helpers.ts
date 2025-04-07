@@ -1,9 +1,12 @@
+import { ObjectId } from 'mongoose';
 import { ITournament } from '../database/models';
 import { ITeamTournament } from '../database/models/team-tournament.model';
 import { ForfeitResult } from '../types/forfeit-result.types';
 
-export const getTeamTournament = (tournamentId: string, tournaments: ITeamTournament[]) => {
-  const tournament = tournaments.find(tournament => tournament._id.toString() === tournamentId);
+export const getTeamTournament = (tournamentId: ObjectId, tournaments: ITeamTournament[]) => {
+  const tournament = tournaments.find(
+    tournament => tournament.tournament.toString() === tournamentId.toString(),
+  );
   return tournament;
 };
 

@@ -10,13 +10,24 @@ import {
   handleTransferCaptain,
 } from '../commands/team.commands';
 
+import {
+  handleChallenge,
+  handleProposeDates,
+  handleScheduleChallenge,
+  handleSubmitResult,
+} from '../commands/challenge.commands';
+
 type TeamSubcommand =
   | 'create'
   | 'view'
   | 'add_member'
   | 'remove_member'
   | 'update_member'
-  | 'transfer_captain';
+  | 'transfer_captain'
+  | 'challenge'
+  | 'propose_dates'
+  | 'schedule'
+  | 'submit_result';
 
 const handlers: Record<
   TeamSubcommand,
@@ -28,6 +39,10 @@ const handlers: Record<
   remove_member: handleRemoveMember,
   update_member: handleUpdateMember,
   transfer_captain: handleTransferCaptain,
+  challenge: handleChallenge,
+  propose_dates: handleProposeDates,
+  schedule: handleScheduleChallenge,
+  submit_result: handleSubmitResult,
 };
 
 export const handleTeamCommand: TournamentCommandHandler = {

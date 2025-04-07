@@ -139,7 +139,7 @@ const buildStandingsSubcommand: SubcommandBuilder = {
         option
           .setName('tournament_id')
           .setDescription('Tournament ID')
-          .setRequired(false)
+          .setRequired(true)
           .setAutocomplete(true),
       ),
 };

@@ -1,4 +1,3 @@
-// src/commands/commands/tournament/standings.command.ts
 import {
   ChatInputCommandInteraction,
   EmbedBuilder,
@@ -9,6 +8,13 @@ import {
 } from 'discord.js';
 import { logger } from '../../../../utils/logger.utils';
 import { TournamentService } from '../../../../services/tournament/tournament.services';
+import {
+  StatusIcons,
+  MessageColors,
+  createErrorEmbed,
+  createInfoEmbed,
+  formatTimestamp,
+} from '../../../../helpers/message.helpers';
 
 const tournamentService = new TournamentService();
 
@@ -20,9 +26,14 @@ export async function handleViewStandings(interaction: ChatInputCommandInteracti
 
     // Get tournament standings
     const teams = await tournamentService.getTournamentStandings(tournamentId || '');
+    const tournament = await tournamentService.getTournamentById(tournamentId || '');
 
     if (teams.length === 0) {
-      await interaction.editReply('No teams found in the tournament.');
+      const noTeamsEmbed = createInfoEmbed(
+        'No Teams Found',
+        `No teams have registered for this tournament yet.`,
+      );
+      await interaction.editReply({ embeds: [noTeamsEmbed] });
       return;
     }
 
@@ -40,16 +51,30 @@ export async function handleViewStandings(interaction: ChatInputCommandInteracti
 
     // Create embeds for each tier
     const embeds: EmbedBuilder[] = [];
+    const tournamentName = tournament ? tournament.name : 'Tournament';
 
     for (const tier of sortedTiers) {
       const tierTeams = tierGroups.get(tier) || [];
+      const tierColor =
+        tier === 1
+          ? MessageColors.TOURNAMENT
+          : tier === 2
+            ? ('#C0C0C0' as const)
+            : tier === 3
+              ? ('#CD7F32' as const)
+              : MessageColors.TEAM;
 
+      // Create embed using helper
       const embed = new EmbedBuilder()
-        .setColor('#0099ff')
-        .setTitle(`Tier ${tier} Standings`)
-        .setDescription(`Teams in Tier ${tier}, sorted by prestige points`)
+        .setColor(tierColor)
+        .setTitle(`${StatusIcons.TROPHY} ${tournamentName} - Tier ${tier} Standings`)
+        .setDescription(
+          `${tier === 1 ? StatusIcons.STAR + ' ' : ''}` +
+            `**Tier ${tier}** Teams ${tier === 1 ? '(Top Tier)' : ''} | ` +
+            `Sorted by prestige points`,
+        )
         .setTimestamp()
-        .setFooter({ text: 'Twinspire Bot' });
+        .setFooter({ text: `Twinspire Bot • Page ${tier} of ${sortedTiers.length}` });
 
       // Add each team in this tier
       tierTeams.forEach((team, index) => {
@@ -63,16 +88,33 @@ export async function handleViewStandings(interaction: ChatInputCommandInteracti
           protectedUntil: team.protectedUntil,
         };
 
+        // Add ranking medal for top 3 teams in tier 1
+        const rankPrefix =
+          tier === 1 && index === 0
+            ? '🥇 '
+            : tier === 1 && index === 1
+              ? '🥈 '
+              : tier === 1 && index === 2
+                ? '🥉 '
+                : `${index + 1}. `;
+
+        // Create status text with icon
+        const statusText =
+          teamData.protectedUntil && teamData.protectedUntil > new Date()
+            ? `${StatusIcons.PROTECTED} **Protected Until**: ${formatTimestamp(teamData.protectedUntil, 'R')}`
+            : `${StatusIcons.UNLOCKED} **Status**: Challengeable`;
+
+        // Win streak icon based on streak length
+        const streakIcon = teamData.winStreak >= 5 ? '🔥' : teamData.winStreak >= 3 ? '✨' : '';
+
         embed.addFields({
-          name: `${index + 1}. ${teamData.name}`,
+          name: `${rankPrefix}${teamData.name}`,
           value: [
-            `**Captain**: <@${teamData.captainId}>`,
-            `**Prestige**: ${teamData.prestige} points`,
-            `**Record**: ${teamData.wins}-${teamData.losses}`,
-            `**Win Streak**: ${teamData.winStreak}`,
-            teamData.protectedUntil && teamData.protectedUntil > new Date()
-              ? `**Protected Until**: <t:${Math.floor(teamData.protectedUntil.getTime() / 1000)}:R>`
-              : `**Status**: Challengeable`,
+            `${StatusIcons.CROWN} **Captain**: <@${teamData.captainId}>`,
+            `${StatusIcons.STAR} **Prestige**: ${teamData.prestige} points`,
+            `📊 **Record**: ${teamData.wins}-${teamData.losses}`,
+            `${streakIcon} **Win Streak**: ${teamData.winStreak}${streakIcon}`,
+            statusText,
           ].join('\n'),
           inline: true,
         });
@@ -94,11 +136,13 @@ export async function handleViewStandings(interaction: ChatInputCommandInteracti
             .setCustomId('prev')
             .setLabel('Previous Tier')
             .setStyle(ButtonStyle.Primary)
+            .setEmoji('⬆️')
             .setDisabled(true),
           new ButtonBuilder()
             .setCustomId('next')
             .setLabel('Next Tier')
             .setStyle(ButtonStyle.Primary)
+            .setEmoji('⬇️')
             .setDisabled(embeds.length <= 1),
         );
 
@@ -110,12 +154,15 @@ export async function handleViewStandings(interaction: ChatInputCommandInteracti
         // Create collector for button interactions
         const collector = response.createMessageComponentCollector({
           componentType: ComponentType.Button,
-          time: 60000,
+          time: 120000, // Extended time to 2 minutes
         });
 
         collector.on('collect', async i => {
           if (i.user.id !== interaction.user.id) {
-            await i.reply({ content: 'You cannot use these buttons.', ephemeral: true });
+            await i.reply({
+              content: `${StatusIcons.ERROR} Only ${interaction.user.toString()} can use these buttons.`,
+              ephemeral: true,
+            });
             return;
           }
 
@@ -137,11 +184,13 @@ export async function handleViewStandings(interaction: ChatInputCommandInteracti
               .setCustomId('prev')
               .setLabel('Previous Tier')
               .setStyle(ButtonStyle.Primary)
+              .setEmoji('⬆️')
               .setDisabled(currentPage === 0),
             new ButtonBuilder()
               .setCustomId('next')
               .setLabel('Next Tier')
               .setStyle(ButtonStyle.Primary)
+              .setEmoji('⬇️')
               .setDisabled(currentPage === embeds.length - 1),
           );
 
@@ -157,12 +206,14 @@ export async function handleViewStandings(interaction: ChatInputCommandInteracti
             new ButtonBuilder()
               .setCustomId('prev')
               .setLabel('Previous Tier')
-              .setStyle(ButtonStyle.Primary)
+              .setStyle(ButtonStyle.Secondary)
+              .setEmoji('⬆️')
               .setDisabled(true),
             new ButtonBuilder()
               .setCustomId('next')
               .setLabel('Next Tier')
-              .setStyle(ButtonStyle.Primary)
+              .setStyle(ButtonStyle.Secondary)
+              .setEmoji('⬇️')
               .setDisabled(true),
           );
 
@@ -173,10 +224,19 @@ export async function handleViewStandings(interaction: ChatInputCommandInteracti
         });
       }
     } else {
-      await interaction.editReply('No team standings available.');
+      const noStandingsEmbed = createInfoEmbed(
+        'No Standings Available',
+        'Could not generate tournament standings.',
+      );
+      await interaction.editReply({ embeds: [noStandingsEmbed] });
     }
   } catch (error) {
     logger.error('Error viewing tournament standings:', error);
-    await interaction.editReply('Failed to retrieve tournament standings. Check logs for details.');
+    const errorEmbed = createErrorEmbed(
+      'Standings Error',
+      'Failed to retrieve tournament standings.',
+      'Please check server logs for details.',
+    );
+    await interaction.editReply({ embeds: [errorEmbed] });
   }
 }

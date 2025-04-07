@@ -55,15 +55,15 @@ export const loadCommands = async () => {
 
   // Find all command files recursively
   const commandFiles = findCommandFiles(commandsPath);
-  console.log(`LOG || loadCommands || commandFiles ->`, commandFiles)
+  console.log(`LOG || loadCommands || commandFiles ->`, commandFiles);
 
   for (const filePath of commandFiles) {
     try {
       const command = await import(filePath);
-      
+
       // Handle both default and named exports
       const commandModule = command.default || Object.values(command)[0];
-      
+
       if (commandModule && 'data' in commandModule && 'execute' in commandModule) {
         commands.set(commandModule.data.name, commandModule);
         console.log(

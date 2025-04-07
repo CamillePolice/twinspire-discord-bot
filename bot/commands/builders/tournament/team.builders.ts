@@ -42,7 +42,7 @@ const buildAddMemberSubcommand: SubcommandBuilder = {
         option
           .setName('role')
           .setDescription('Role within the team')
-          .setRequired(false)
+          .setRequired(true)
           .addChoices(
             { name: 'Top', value: Role.TOP },
             { name: 'Jungle', value: Role.JUNGLE },
@@ -113,10 +113,13 @@ const buildChallengeSubcommand: SubcommandBuilder = {
       .setDescription('Challenge another team')
       .addStringOption(option =>
         option
-          .setName('team_id')
+          .setName('defending_team')
           .setDescription('Team ID to challenge')
           .setRequired(true)
           .setAutocomplete(true),
+      )
+      .addStringOption(option =>
+        option.setName('tournament_id').setDescription('Tournament ID').setRequired(true),
       ),
 };
 

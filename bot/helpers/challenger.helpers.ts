@@ -1,7 +1,7 @@
 import { IChallenge } from '../database/models/challenge.model';
 import { ITournament } from '../database/models/tournament.model';
 import { ITeamTournament } from '../database/models/team-tournament.model';
-import { Challenge } from '../database/models';
+import { Challenge, Tournament } from '../database/models';
 import { ChallengeStatus } from '../database/enums/challenge.enums';
 import { logger } from '../utils/logger.utils';
 import { v4 as uuidv4 } from 'uuid';
@@ -11,6 +11,7 @@ import { TournamentService } from '../services/tournament/tournament.services';
 import { ChallengeStats } from '../types/challenge-stat.types';
 import { TeamTournamentPair } from '../types/tournament-team-pair.types';
 import { TeamPair } from '../types/team-pair.types';
+import { Schema } from 'mongoose';
 
 const teamService = new TeamService();
 const tournamentService = new TournamentService();
@@ -95,12 +96,21 @@ export const createChallengeRecord = async (
   defendingTeamId: string,
   challengerTier: number,
   defendingTier: number,
+  challengerTeamTournament: Schema.Types.ObjectId,
+  defendingTeamTournament: Schema.Types.ObjectId,
 ): Promise<IChallenge> => {
+  console.log(`LOG || defendingTier ->`, defendingTier)
+  console.log(`LOG || challengerTier ->`, challengerTier)
+  console.log(`LOG || defendingTeamId ->`, defendingTeamId)
+  console.log(`LOG || challengerTeamId ->`, challengerTeamId)
+  console.log(`LOG || tournamentId ->`, tournamentId)
   const challenge = new Challenge({
     challengeId: uuidv4(),
     tournamentId,
     challengerTeamId,
     defendingTeamId,
+    challengerTeamTournament,
+    defendingTeamTournament,
     status: ChallengeStatus.PENDING,
     tierBefore: {
       challenger: challengerTier,
@@ -214,7 +224,9 @@ export const validateTeams = async (
       teamService.getTeamByTeamId(challengerTeamId),
       teamService.getTeamByTeamId(defendingTeamId),
     ]);
-
+    console.log(`LOG || defendingTeam ->`, defendingTeam)
+    console.log(`LOG || challengerTeam ->`, challengerTeam)
+    
     if (!challengerTeam || !defendingTeam) {
       logger.error(
         `One of the teams doesn't exist: Challenger: ${challengerTeamId}, Defending: ${defendingTeamId}`,
@@ -222,12 +234,19 @@ export const validateTeams = async (
       return null;
     }
 
+    const mongoTournament = await Tournament.findOne({ tournamentId });
+
+    if (!mongoTournament) {
+      logger.error(`Tournament ${tournamentId} not found`);
+      return null;
+    }
+    
     const challengerTeamTournament = getTeamTournament(
-      tournamentId,
+      mongoTournament._id,
       challengerTeam.tournaments || [],
     );
     const defendingTeamTournament = getTeamTournament(
-      tournamentId,
+      mongoTournament._id,
       defendingTeam.tournaments || [],
     );
 
