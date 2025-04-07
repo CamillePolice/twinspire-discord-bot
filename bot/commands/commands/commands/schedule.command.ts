@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction } from 'discord.js';
+import { ChatInputCommandInteraction, TextChannel } from 'discord.js';
 import { logger } from '../../../utils/logger.utils';
 import { ChallengeService } from '../../../services/tournament/challenge.services';
 import {
@@ -9,7 +9,7 @@ import {
 } from '../../../helpers/message.helpers';
 import { ChallengeStatus } from '../../../database/enums/challenge.enums';
 import { TeamTournament } from '../../../database/models';
-import { ITeamMember } from '../../../database/models/team.model';
+import { ITeamMember, ITeam } from '../../../database/models/team.model';
 
 const challengeService = new ChallengeService();
 
@@ -111,76 +111,106 @@ export async function handleScheduleChallenge(
 
       await interaction.editReply({ embeds: [embed] });
 
-      // Send DM to both team captains
+      // Variables to store team information for both DMs and public announcement
+      const challengerTeam = await TeamTournament.findById(challenge.challengerTeamTournament).populate<{ team: ITeam }>('team');
+      const defendingTeam = await TeamTournament.findById(challenge.defendingTeamTournament).populate<{ team: ITeam }>('team');
+
+      if (!challengerTeam || !defendingTeam) {
+        logger.error(`Could not find teams for challenge ${challengeId}`);
+        return;
+      }
+
+      // Get captains from both teams
+      const challengerCaptain = challengerTeam.team.members.find(
+        (member: ITeamMember) => member.isCaptain,
+      );
+      const defendingCaptain = defendingTeam.team.members.find(
+        (member: ITeamMember) => member.isCaptain,
+      );
+
+      if (!challengerCaptain || !defendingCaptain) {
+        logger.error(`Could not find captains for challenge ${challengeId}`);
+        return;
+      }
+
+      // Fetch Discord users for both captains
+      const challengerCaptainUser = await interaction.client.users.fetch(challengerCaptain.discordId);
+      const defendingCaptainUser = await interaction.client.users.fetch(defendingCaptain.discordId);
+
+      // Create notification embed
+      const notificationEmbed = createChallengeEmbed(
+        challengeId,
+        'Scheduled',
+        `${StatusIcons.CALENDAR} Your challenge has been scheduled!`,
+      ).addFields(
+        {
+          name: 'Teams',
+          value: `${challengerTeam.team.name} vs ${defendingTeam.team.name}`,
+        },
+        {
+          name: 'Scheduled Date',
+          value: formatTimestamp(selectedDate, 'F'),
+        },
+        {
+          name: 'Next Steps',
+          value: 'Prepare for the challenge at the scheduled time. After the match, use `/team-challenge submit_result` to report the outcome.',
+        },
+      );
+
+      // Send DM to both captains
+      await challengerCaptainUser.send({ embeds: [notificationEmbed] });
+      await defendingCaptainUser.send({ embeds: [notificationEmbed] });
+
+      logger.info(`Sent schedule notifications to captains for challenge ${challengeId}`);
+
+      // Send confirmation to the "défis" channel
       try {
-        // Get both team tournaments with populated team data
-        const challengerTeamTournament = await TeamTournament.findById(
-          challenge.challengerTeamTournament,
-        ).populate({
-          path: 'team',
-          select: 'name members',
-        });
-
-        const defendingTeamTournament = await TeamTournament.findById(
-          challenge.defendingTeamTournament,
-        ).populate({
-          path: 'team',
-          select: 'name members',
-        });
-
-        if (!challengerTeamTournament || !defendingTeamTournament) {
-          logger.error(`Could not find team tournaments for challenge ${challengeId}`);
+        // Find the "défis" channel in the guild
+        const guild = interaction.guild;
+        if (!guild) {
+          logger.error('Could not find guild for challenge notification');
           return;
         }
 
-        // Get captains from both teams
-        const challengerTeam = challengerTeamTournament.team as any;
-        const defendingTeam = defendingTeamTournament.team as any;
+        const defisChannel = guild.channels.cache.find(
+          channel => channel.name.toLowerCase() === 'défis' && channel instanceof TextChannel,
+        ) as TextChannel | undefined;
 
-        const challengerCaptain = challengerTeam.members.find(
-          (member: ITeamMember) => member.isCaptain,
-        );
-        const defendingCaptain = defendingTeam.members.find(
-          (member: ITeamMember) => member.isCaptain,
-        );
-
-        if (!challengerCaptain || !defendingCaptain) {
-          logger.error(`Could not find captains for challenge ${challengeId}`);
+        if (!defisChannel) {
+          logger.error('Could not find "défis" channel for challenge notification');
           return;
         }
 
-        // Fetch Discord users for both captains
-        const challengerCaptainUser = await interaction.client.users.fetch(challengerCaptain.discordId);
-        const defendingCaptainUser = await interaction.client.users.fetch(defendingCaptain.discordId);
-
-        // Create notification embed
-        const notificationEmbed = createChallengeEmbed(
+        // Create a more detailed embed for the public announcement
+        const publicEmbed = createChallengeEmbed(
           challengeId,
           'Scheduled',
-          `${StatusIcons.CALENDAR} Your challenge has been scheduled!`,
+          `${StatusIcons.CALENDAR} A new challenge has been scheduled!`,
         ).addFields(
           {
             name: 'Teams',
-            value: `${challengerTeam.name} vs ${defendingTeam.name}`,
+            value: `${challengerTeam.team.name} vs ${defendingTeam.team.name}`,
           },
           {
             name: 'Scheduled Date',
             value: formatTimestamp(selectedDate, 'F'),
           },
           {
-            name: 'Next Steps',
-            value: 'Prepare for the challenge at the scheduled time. After the match, use `/team-challenge submit_result` to report the outcome.',
+            name: 'Tournament',
+            value: challenge.tournamentId || 'Unknown Tournament',
+          },
+          {
+            name: 'Tiers',
+            value: `Challenger: Tier ${challenge.tierBefore.challenger}, Defender: Tier ${challenge.tierBefore.defending}`,
           },
         );
 
-        // Send DM to both captains
-        await challengerCaptainUser.send({ embeds: [notificationEmbed] });
-        await defendingCaptainUser.send({ embeds: [notificationEmbed] });
-
-        logger.info(`Sent schedule notifications to captains for challenge ${challengeId}`);
+        // Send the announcement to the "défis" channel
+        await defisChannel.send({ embeds: [publicEmbed] });
+        logger.info(`Sent challenge announcement to "défis" channel for challenge ${challengeId}`);
       } catch (error) {
-        logger.error('Error sending DM to team captains:', error as Error);
-        // Don't fail the scheduling if DM fails
+        logger.error('Error sending announcement to "défis" channel:', error as Error);
+        // Don't fail the scheduling if announcement fails
       }
     } else {
       const embed = createErrorEmbed(
