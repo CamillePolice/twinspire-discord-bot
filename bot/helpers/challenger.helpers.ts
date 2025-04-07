@@ -99,11 +99,6 @@ export const createChallengeRecord = async (
   challengerTeamTournament: Schema.Types.ObjectId,
   defendingTeamTournament: Schema.Types.ObjectId,
 ): Promise<IChallenge> => {
-  console.log(`LOG || defendingTier ->`, defendingTier)
-  console.log(`LOG || challengerTier ->`, challengerTier)
-  console.log(`LOG || defendingTeamId ->`, defendingTeamId)
-  console.log(`LOG || challengerTeamId ->`, challengerTeamId)
-  console.log(`LOG || tournamentId ->`, tournamentId)
   const challenge = new Challenge({
     challengeId: uuidv4(),
     tournamentId,

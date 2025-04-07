@@ -45,9 +45,7 @@ export class ChallengeService {
       if (!teamValidation || !tournament) return null;
 
       const { challengerTeamTournament, defendingTeamTournament } = teamValidation;
-      console.log(`LOG || defendingTeamTournament ->`, defendingTeamTournament)
-      console.log(`LOG || challengerTeamTournament ->`, challengerTeamTournament)
-
+      
       // Run all validations
       if (!validateTierDifference(challengerTeamTournament, defendingTeamTournament)) return null;
       if (!validateProtectionPeriod(defendingTeamTournament)) return null;
