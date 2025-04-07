@@ -7,6 +7,7 @@ import { guildCreate } from './guilds/guild-create.events';
 import { guildDelete } from './guilds/guild-delete.events';
 import { guildMemberAdd } from './guilds/guild-members.events';
 import { guildMemberUpdate } from './guilds/guild-members.events';
+import { messageReactionAdd } from './message-reaction.events';
 
 // Register all event handlers
 export function registerEvents(client: Client): void {
@@ -17,6 +18,7 @@ export function registerEvents(client: Client): void {
   client.on('guildDelete', guildDelete);
   client.on('guildMemberAdd', guildMemberAdd);
   client.on('guildMemberUpdate', guildMemberUpdate);
+  client.on('messageReactionAdd', messageReactionAdd);
 
   logger.info('Event handlers registered');
 }
