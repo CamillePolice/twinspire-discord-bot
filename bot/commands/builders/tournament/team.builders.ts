@@ -167,11 +167,16 @@ const buildScheduleChallengeSubcommand: SubcommandBuilder = {
           .setRequired(true)
           .setAutocomplete(true),
       )
-      .addStringOption(option =>
+      .addIntegerOption(option =>
         option
-          .setName('date')
-          .setDescription('Scheduled date (YYYY-MM-DD HH:MM)')
-          .setRequired(true),
+          .setName('date_option')
+          .setDescription('Select which proposed date to schedule')
+          .setRequired(true)
+          .addChoices(
+            { name: 'Option 1', value: 1 },
+            { name: 'Option 2', value: 2 },
+            { name: 'Option 3', value: 3 },
+          ),
       ),
 };
 
