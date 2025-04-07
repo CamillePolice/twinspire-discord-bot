@@ -22,6 +22,10 @@ const teamMemberSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    opgg: {
+      type: String,
+      default: '',
+    },
   },
   {
     timestamps: true,
@@ -66,6 +70,7 @@ export interface ITeamMember {
   username: string;
   role?: string;
   isCaptain: boolean;
+  opgg?: string;
 }
 
 // Interface for the document

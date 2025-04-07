@@ -17,6 +17,7 @@ export async function handleAddMember(interaction: ChatInputCommandInteraction):
     // Get the user and optional role from the interaction
     const user = interaction.options.getUser('user', true);
     const role = interaction.options.getString('role');
+    const opgg = interaction.options.getString('opgg');
 
     logger.info(
       `Attempting to add ${user.username} (${user.id}) to a team with role: ${role || 'Not specified'}`,
@@ -76,6 +77,7 @@ export async function handleAddMember(interaction: ChatInputCommandInteraction):
       username: user.username,
       role: (role as Role) || undefined,
       isCaptain: false,
+      opgg: opgg || undefined,
     });
 
     await captainTeam.save();

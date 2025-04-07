@@ -16,6 +16,7 @@ export async function handleUpdateMember(interaction: ChatInputCommandInteractio
   try {
     const role = interaction.options.getString('role', true);
     const user = interaction.options.getUser('user', true);
+    const opgg = interaction.options.getString('opgg', true);
 
     // Find the team where this user is a member
     const team = await Team.findOne({ members: { $elemMatch: { discordId: user.id } } });
@@ -74,6 +75,7 @@ export async function handleUpdateMember(interaction: ChatInputCommandInteractio
 
     // Update the member's role
     team.members[memberIndex].role = role;
+    team.members[memberIndex].opgg = opgg;
     await team.save();
 
     // Create success embed
@@ -84,6 +86,7 @@ export async function handleUpdateMember(interaction: ChatInputCommandInteractio
       { name: 'Member', value: `<@${user.id}>`, inline: true },
       { name: 'Previous Role', value: oldRoleDisplay, inline: true },
       { name: 'New Role', value: newRoleDisplay, inline: true },
+      { name: 'OP.GG', value: opgg, inline: true },
     );
 
     // Add user avatar if available

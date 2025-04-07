@@ -7,9 +7,10 @@ import {
   handleListTournaments,
   handleUpdateStatus,
   handleViewStandings,
+  handleAddTeamToTournament,
 } from '../commands/tournament.commands';
 
-type TournamentSubcommand = 'create' | 'view' | 'list' | 'status' | 'standings';
+type TournamentSubcommand = 'create' | 'view' | 'list' | 'status' | 'standings' | 'add_team';
 
 const handlers: Record<
   TournamentSubcommand,
@@ -20,6 +21,7 @@ const handlers: Record<
   list: handleListTournaments,
   status: handleUpdateStatus,
   standings: handleViewStandings,
+  add_team: handleAddTeamToTournament,
 };
 
 export const handleTournamentCommand: TournamentCommandHandler = {
@@ -37,10 +39,17 @@ export const handleTournamentCommand: TournamentCommandHandler = {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       logger.error(`Error executing tournament ${subcommand} command:`, error);
 
-      await interaction.reply({
-        content: `Error: ${errorMessage}`,
-        ephemeral: true,
-      });
+      // Only try to reply if the interaction hasn't been replied to yet
+      if (!interaction.replied && !interaction.deferred) {
+        try {
+          await interaction.reply({
+            content: `Error: ${errorMessage}`,
+            ephemeral: true,
+          });
+        } catch (replyError) {
+          logger.error('Failed to send error message:', replyError);
+        }
+      }
     }
   },
 };

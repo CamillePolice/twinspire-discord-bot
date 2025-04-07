@@ -101,6 +101,35 @@ const buildStatusSubcommand: SubcommandBuilder = {
       ),
 };
 
+const buildAddTeamToTournamentSubcommand: SubcommandBuilder = {
+  build: (subcommand: SlashCommandSubcommandBuilder) =>
+    subcommand
+      .setName('add_team')
+      .setDescription('Add a team to a tournament')
+      .addStringOption(option =>
+        option
+          .setName('tournament_id')
+          .setDescription('Tournament ID')
+          .setRequired(true)
+          .setAutocomplete(true),
+      )
+      .addStringOption(option =>
+        option
+          .setName('team_id')
+          .setDescription('Team ID to add')
+          .setRequired(true)
+          .setAutocomplete(true),
+      )
+      .addIntegerOption(option =>
+        option
+          .setName('tier')
+          .setDescription('Starting tier for the team')
+          .setRequired(true)
+          .setMinValue(1)
+          .setMaxValue(10),
+      ),
+};
+
 const buildStandingsSubcommand: SubcommandBuilder = {
   build: (subcommand: SlashCommandSubcommandBuilder) =>
     subcommand
@@ -124,6 +153,7 @@ export const buildTournamentCommand: TournamentCommandBuilder = {
     .addSubcommand(buildViewSubcommand.build)
     .addSubcommand(buildListSubcommand.build)
     .addSubcommand(buildStatusSubcommand.build)
+    .addSubcommand(buildAddTeamToTournamentSubcommand.build)
     .addSubcommand(buildStandingsSubcommand.build) as SlashCommandBuilder,
   execute: handleTournamentCommand.execute,
 };

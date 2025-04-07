@@ -358,11 +358,13 @@ export class TeamService {
 
       await teamTournament.save();
 
+      console.log(`LOG || teamTournament ->`, teamTournament)
+
       // Add this tournament entry to the team's tournaments array
       await Team.updateOne(
         { teamId },
         {
-          $push: { tournaments: teamTournament._id },
+          $addToSet: { tournaments: teamTournament._id },
           $set: { updatedAt: new Date() },
         },
       );

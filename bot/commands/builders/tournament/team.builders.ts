@@ -36,6 +36,9 @@ const buildAddMemberSubcommand: SubcommandBuilder = {
         option.setName('user').setDescription('User to add to the team').setRequired(true),
       )
       .addStringOption(option =>
+        option.setName('opgg').setDescription('OP.GG link').setRequired(true),
+      )
+      .addStringOption(option =>
         option
           .setName('role')
           .setDescription('Role within the team')
@@ -84,6 +87,9 @@ const buildUpdateMemberSubcommand: SubcommandBuilder = {
             { name: 'Support', value: Role.SUPPORT },
             { name: 'Fill', value: Role.FILL },
           ),
+      )
+      .addStringOption(option =>
+        option.setName('opgg').setDescription('OP.GG link').setRequired(true),
       ),
 };
 
