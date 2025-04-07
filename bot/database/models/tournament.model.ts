@@ -1,6 +1,7 @@
 import { Schema, model, Model } from 'mongoose';
 import { TournamentFormat } from '../enums/tournament-format.enums';
 import { TournamentStatus } from '../enums/tournament-status.enums';
+
 const tournamentSchema: Schema = new Schema(
   {
     tournamentId: {
@@ -20,7 +21,7 @@ const tournamentSchema: Schema = new Schema(
     },
     format: {
       type: String,
-      enum: ['BO1', 'BO3', 'BO5'],
+      enum: [TournamentFormat.B01, TournamentFormat.B03, TournamentFormat.B05],
       required: true,
     },
     maxTiers: {
@@ -41,7 +42,7 @@ const tournamentSchema: Schema = new Schema(
     },
     status: {
       type: String,
-      enum: ['upcoming', 'active', 'completed'],
+      enum: [TournamentStatus.UPCOMING, TournamentStatus.ACTIVE, TournamentStatus.COMPLETED],
       required: true,
     },
     rules: {

@@ -14,7 +14,7 @@ export class TournamentService {
    * @returns The created tournament object
    */
   async createTournament(
-    tournamentData: Omit<ITournament, 'tournamentId' | 'createdAt' | 'updatedAt'>,
+    tournamentData: Omit<ITournament, 'tournamentId' | 'createdAt' | 'updatedAt' | '_id'>,
   ): Promise<ITournament> {
     try {
       const tournament = new Tournament({

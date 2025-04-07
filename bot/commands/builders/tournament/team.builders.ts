@@ -47,6 +47,8 @@ const buildAddMemberSubcommand: SubcommandBuilder = {
             { name: 'ADC', value: Role.ADC },
             { name: 'Support', value: Role.SUPPORT },
             { name: 'Fill', value: Role.FILL },
+            { name: 'Little Legend', value: Role.LITTLE_LEGEND },
+            { name: 'Coach', value: Role.COACH },
           ),
       ),
 };

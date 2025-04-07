@@ -1,6 +1,7 @@
 import { ObjectId } from 'mongodb';
 import { Schema, model, Model } from 'mongoose';
 import { ITeamTournament } from './team-tournament.model';
+import { Role } from '../enums/role.enums';
 
 // Creating a schema for team member
 const teamMemberSchema = new Schema(
@@ -15,7 +16,7 @@ const teamMemberSchema = new Schema(
     },
     role: {
       type: String,
-      enum: ['TOP', 'JGL', 'MID', 'ADC', 'SUP', 'FILL'],
+      enum: [Role.TOP, Role.JUNGLE, Role.MID, Role.ADC, Role.SUPPORT, Role.FILL],
     },
     isCaptain: {
       type: Boolean,

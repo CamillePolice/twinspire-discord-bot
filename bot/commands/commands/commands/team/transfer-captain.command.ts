@@ -1,13 +1,13 @@
 import { ChatInputCommandInteraction } from 'discord.js';
-import { logger } from '../../../utils/logger.utils';
-import Team from '../../../database/models/team.model';
+import { logger } from '../../../../utils/logger.utils';
+import Team from '../../../../database/models/team.model';
 import {
   createSuccessEmbed,
   createErrorEmbed,
   createWarningEmbed,
   addUserAvatar,
   StatusIcons,
-} from '../../../helpers/message.helpers';
+} from '../../../../helpers/message.helpers';
 
 export async function handleTransferCaptain(
   interaction: ChatInputCommandInteraction,

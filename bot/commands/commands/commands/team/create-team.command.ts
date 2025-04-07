@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { ChatInputCommandInteraction } from 'discord.js';
-import { logger } from '../../../utils/logger.utils';
-import Team from '../../../database/models/team.model';
+import { logger } from '../../../../utils/logger.utils';
+import Team from '../../../../database/models/team.model';
 
 export async function handleCreateTeam(interaction: ChatInputCommandInteraction): Promise<void> {
   await interaction.deferReply();

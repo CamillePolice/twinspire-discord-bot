@@ -1,14 +1,14 @@
 import { ChatInputCommandInteraction } from 'discord.js';
-import { logger } from '../../../utils/logger.utils';
-import Team from '../../../database/models/team.model';
-import { Role } from '../../../database/enums/role.enums';
+import { logger } from '../../../../utils/logger.utils';
+import Team from '../../../../database/models/team.model';
+import { Role } from '../../../../database/enums/role.enums';
 import {
   createSuccessEmbed,
   createErrorEmbed,
   createWarningEmbed,
   addUserAvatar,
   getRoleIcon,
-} from '../../../helpers/message.helpers';
+} from '../../../../helpers/message.helpers';
 
 export async function handleUpdateMember(interaction: ChatInputCommandInteraction): Promise<void> {
   await interaction.deferReply();

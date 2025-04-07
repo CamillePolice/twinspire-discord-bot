@@ -1,7 +1,7 @@
 import { ChatInputCommandInteraction } from 'discord.js';
-import { logger } from '../../../utils/logger.utils';
-import Team, { ITeam } from '../../../database/models/team.model';
-import { ChallengeService } from '../../../services/tournament/challenge.services';
+import { logger } from '../../../../utils/logger.utils';
+import Team, { ITeam } from '../../../../database/models/team.model';
+import { ChallengeService } from '../../../../services/tournament/challenge.services';
 import {
   createTeamEmbed,
   formatMembersList,
@@ -11,7 +11,7 @@ import {
   createErrorEmbed,
   createInfoEmbed,
   StatusIcons,
-} from '../../../helpers/message.helpers';
+} from '../../../../helpers/message.helpers';
 
 export async function handleViewTeam(interaction: ChatInputCommandInteraction): Promise<void> {
   await interaction.deferReply();
