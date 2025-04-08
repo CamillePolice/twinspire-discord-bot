@@ -8,6 +8,8 @@ import { handleForceResult } from './commands/admin/force-result.command';
 import { handleForfeit } from './commands/admin/forfeit.command';
 import { handleCancel } from './commands/admin/cancel.command';
 import { handleAdminCreateTeam } from './commands/admin/create-team.command';
+import { handleAdminUpdateTeamMember } from './commands/admin/admin-update-team.command';
+import { handleAdminRemoveTeamMember } from './commands/admin/admin-remove-team-member.command';
 
 export {
   handleChallenge,
@@ -20,4 +22,6 @@ export {
   handleForfeit,
   handleCancel,
   handleAdminCreateTeam,
+  handleAdminUpdateTeamMember,
+  handleAdminRemoveTeamMember,
 };

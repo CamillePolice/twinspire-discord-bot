@@ -8,9 +8,21 @@ import {
   handleForfeit,
   handleCancel,
   handleAdminCreateTeam,
+  handleAdminUpdateTeamMember,
+  handleAdminRemoveTeamMember,
+  handleAdminAddTeamMember,
 } from '../commands/admin.commands';
 
-type AdminSubcommand = 'view' | 'check_timeouts' | 'force_result' | 'forfeit' | 'cancel' | 'create_team';
+type AdminSubcommand =
+  | 'view'
+  | 'check_timeouts'
+  | 'force_result'
+  | 'forfeit'
+  | 'cancel'
+  | 'create_team'
+  | 'update_team_member'
+  | 'remove_team_member'
+  | 'add_team_member';
 
 const handlers: Record<
   AdminSubcommand,
@@ -22,6 +34,9 @@ const handlers: Record<
   forfeit: handleForfeit,
   cancel: handleCancel,
   create_team: handleAdminCreateTeam,
+  update_team_member: handleAdminUpdateTeamMember,
+  remove_team_member: handleAdminRemoveTeamMember,
+  add_team_member: handleAdminAddTeamMember,
 };
 
 export const handleAdminCommand: TournamentCommandHandler = {

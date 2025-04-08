@@ -145,6 +145,81 @@ const buildCreateTeamSubcommand: SubcommandBuilder = {
       ),
 };
 
+const buildUpdateTeamMemberSubcommand: SubcommandBuilder = {
+  build: (subcommand: SlashCommandSubcommandBuilder) =>
+    subcommand
+      .setName('update_team_member')
+      .setDescription('Update a team member (Admin only)')
+      .addStringOption(option =>
+        option.setName('team_id').setDescription('Team ID').setRequired(true).setAutocomplete(true),
+      )
+      .addUserOption(option =>
+        option.setName('user').setDescription('User to update').setRequired(true),
+      )
+      .addStringOption(option =>
+        option
+          .setName('role')
+          .setDescription('New role within the team')
+          .setRequired(true)
+          .addChoices(
+            { name: 'Top', value: Role.TOP },
+            { name: 'Jungle', value: Role.JUNGLE },
+            { name: 'Mid', value: Role.MID },
+            { name: 'ADC', value: Role.ADC },
+            { name: 'Support', value: Role.SUPPORT },
+            { name: 'Fill', value: Role.FILL },
+          ),
+      )
+      .addStringOption(option =>
+        option.setName('opgg').setDescription('OP.GG link').setRequired(true),
+      ),
+};
+
+const buildRemoveTeamMemberSubcommand: SubcommandBuilder = {
+  build: (subcommand: SlashCommandSubcommandBuilder) =>
+    subcommand
+      .setName('remove_team_member')
+      .setDescription('Remove a team member (Admin only)')
+      .addStringOption(option =>
+        option.setName('team_id').setDescription('Team ID').setRequired(true).setAutocomplete(true),
+      )
+      .addUserOption(option =>
+        option.setName('user').setDescription('User to remove').setRequired(true),
+      ),
+};
+
+const buildAddTeamMemberSubcommand: SubcommandBuilder = {
+  build: (subcommand: SlashCommandSubcommandBuilder) =>
+    subcommand
+      .setName('add_team_member')
+      .setDescription('Add a member to a team (Admin only)')
+      .addStringOption(option =>
+        option.setName('team_id').setDescription('Team ID').setRequired(true).setAutocomplete(true),
+      )
+      .addUserOption(option =>
+        option.setName('user').setDescription('User to add to the team').setRequired(true),
+      )
+      .addStringOption(option =>
+        option
+          .setName('role')
+          .setDescription('Role within the team')
+          .setRequired(true)
+          .addChoices(
+            { name: 'Top', value: Role.TOP },
+            { name: 'Jungle', value: Role.JUNGLE },
+            { name: 'Mid', value: Role.MID },
+            { name: 'ADC', value: Role.ADC },
+            { name: 'Support', value: Role.SUPPORT },
+            { name: 'Fill', value: Role.FILL },
+            { name: 'Little Legend', value: Role.LITTLE_LEGEND },
+            { name: 'Coach', value: Role.COACH },
+          ),
+      )
+      .addStringOption(option =>
+        option.setName('opgg').setDescription('OP.GG link').setRequired(true),
+      ),
+};
+
 export const buildAdminChallengeCommand: TournamentCommandBuilder = {
   data: new SlashCommandBuilder()
     .setName('admin-challenge')
@@ -155,6 +230,9 @@ export const buildAdminChallengeCommand: TournamentCommandBuilder = {
     .addSubcommand(buildForceResultSubcommand.build)
     .addSubcommand(buildForfeitSubcommand.build)
     .addSubcommand(buildCancelSubcommand.build)
-    .addSubcommand(buildCreateTeamSubcommand.build) as SlashCommandBuilder,
+    .addSubcommand(buildCreateTeamSubcommand.build)
+    .addSubcommand(buildUpdateTeamMemberSubcommand.build)
+    .addSubcommand(buildRemoveTeamMemberSubcommand.build)
+    .addSubcommand(buildAddTeamMemberSubcommand.build) as SlashCommandBuilder,
   execute: handleAdminCommand.execute,
 };
