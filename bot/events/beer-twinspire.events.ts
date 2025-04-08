@@ -1,4 +1,5 @@
 import { Message, TextChannel } from 'discord.js';
+import * as path from 'path';
 
 /**
  * Handles the event when a message is created
@@ -9,13 +10,18 @@ import { Message, TextChannel } from 'discord.js';
 export async function messageCreate(message: Message): Promise<void> {
   console.log(`LOG || Message received: ${message.content}`);
 
-  // Ignore bot messages
   if (message.author.bot) return;
 
   try {
     const biereVariations = ['bière', 'bieres', 'biere', 'bières', 'beer', 'beers'];
     const twinspireVariations = ['twinspire'];
-    const images = ['../assets/supporter_1.png', '../assets/supporter_2.png'];
+    
+    // Use path.resolve to get absolute paths to the images
+    const images = [
+      path.resolve(__dirname, '../assets/supporter_1.png'),
+      path.resolve(__dirname, '../assets/supporter_2.png'),
+    ];
+
     const messageLower = message.content.toLowerCase();
 
     if (biereVariations.some(variant => messageLower.includes(variant))) {
