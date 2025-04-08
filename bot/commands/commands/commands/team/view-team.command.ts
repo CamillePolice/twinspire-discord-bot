@@ -34,8 +34,8 @@ export async function handleViewTeam(interaction: ChatInputCommandInteraction): 
         select: 'tier prestige wins losses winStreak protectedUntil tournament',
         populate: {
           path: 'tournament',
-          model: 'Tournament'
-        }
+          model: 'Tournament',
+        },
       });
 
       if (userTeams.length === 0) {
@@ -58,8 +58,8 @@ export async function handleViewTeam(interaction: ChatInputCommandInteraction): 
         select: 'tier prestige wins losses winStreak protectedUntil tournament',
         populate: {
           path: 'tournament',
-          model: 'Tournament'
-        }
+          model: 'Tournament',
+        },
       });
 
       if (!team) {
@@ -74,15 +74,14 @@ export async function handleViewTeam(interaction: ChatInputCommandInteraction): 
     const teamData = team.toObject();
 
     // Create the team embed
-    const embed = createTeamEmbed(teamData.name)
-      .addFields(
-        { name: 'Team ID', value: teamData.teamId, inline: false },
-        {
-          name: `${StatusIcons.CROWN} Captain`,
-          value: `<@${teamData.members.find(m => m.isCaptain)?.discordId}>`,
-          inline: true,
-        },
-      );
+    const embed = createTeamEmbed(teamData.name).addFields(
+      { name: 'Team ID', value: teamData.teamId, inline: false },
+      {
+        name: `${StatusIcons.CROWN} Captain`,
+        value: `<@${teamData.members.find(m => m.isCaptain)?.discordId}>`,
+        inline: true,
+      },
+    );
 
     // Add creation date
     if (teamData.createdAt) {
@@ -118,7 +117,7 @@ export async function handleViewTeam(interaction: ChatInputCommandInteraction): 
     // Handle multiple tournaments
     if (teamData.tournaments && teamData.tournaments.length > 0) {
       const challengeService = new ChallengeService();
-      
+
       for (const teamTournament of teamData.tournaments) {
         const tournament = teamTournament.tournament as unknown as ITournament;
         const tournamentStats = formatTournamentStats(

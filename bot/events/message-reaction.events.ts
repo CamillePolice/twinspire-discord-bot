@@ -28,10 +28,10 @@ export async function messageReactionAdd(
 ): Promise<void> {
   console.log(`LOG || Reaction event triggered by user: ${user.tag || user.id}`);
   console.log(`LOG || Reaction emoji: ${reaction.emoji.name}`);
-  
+
   // Ignore bot reactions
   if (user.bot) return;
-  
+
   try {
     // Fetch the full reaction if it's partial
     if (reaction.partial) {
@@ -42,23 +42,23 @@ export async function messageReactionAdd(
     // Get the message that was reacted to
     const message = reaction.message;
     console.log(`LOG || Message channel: ${message.channel.id}`);
-    
+
     // Only process reactions in guild channels
     if (!message.guild) {
       console.log(`LOG || Message is not in a guild`);
       return;
     }
-    
+
     console.log(`LOG || Guild: ${message.guild.name}`);
-    
+
     // Check if the message is in the "défis" channel
     if (!(message.channel instanceof TextChannel)) {
       console.log(`LOG || Channel is not a TextChannel`);
       return;
     }
-    
+
     console.log(`LOG || Channel name: ${message.channel.name}`);
-    
+
     if (message.channel.name.toLowerCase() !== 'défis') {
       console.log(`LOG || Channel is not "défis"`);
       return;
@@ -73,7 +73,7 @@ export async function messageReactionAdd(
     // Get the first embed
     const embed = message.embeds[0];
     console.log(`LOG || Embed title: ${embed.title}`);
-    
+
     // Check if this is a challenge announcement (should have a title with "Challenge:")
     if (!embed.title?.includes('Challenge:')) {
       console.log(`LOG || Embed title does not include "Challenge:"`);

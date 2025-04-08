@@ -13,7 +13,7 @@ export async function checkAdminRole(interaction: ChatInputCommandInteraction): 
   }
 
   const hasAdminRole = member.roles.cache.some((role: Role) => ADMIN_ROLES.includes(role.name));
-  
+
   if (!hasAdminRole) {
     await interaction.editReply({
       embeds: [
@@ -28,4 +28,4 @@ export async function checkAdminRole(interaction: ChatInputCommandInteraction): 
   }
 
   return true;
-} 
+}

@@ -219,7 +219,7 @@ export class ChallengeService {
     // Start a session for transaction
     const session = await startSession();
     session.startTransaction();
-    
+
     try {
       // Create a properly typed result object
       const result: ChallengeResult = { winner: winnerTeamId, score, games };
@@ -237,13 +237,13 @@ export class ChallengeService {
 
       const challengerTeam = await Team.findById(challenge.challengerTeamTournament.team);
       const defendingTeam = await Team.findById(challenge.defendingTeamTournament.team);
-      
+
       if (!challengerTeam || !defendingTeam) {
         logger.error(`Could not find teams for challenge ${challengeId}`);
         await session.abortTransaction();
         return false;
       }
-      
+
       // Validate tournament and teams
       const [tournament, teamValidation] = await Promise.all([
         validateTournament(tournamentId),
@@ -281,7 +281,7 @@ export class ChallengeService {
             updatedAt: new Date(),
           },
         },
-        { session }
+        { session },
       );
 
       if (resultUpdate.modifiedCount === 0) {
@@ -289,7 +289,7 @@ export class ChallengeService {
         await session.abortTransaction();
         return false;
       }
-      
+
       // Update team stats within the transaction
       await Promise.all([
         updateTeamAfterChallenge(challengerTeamTournament, challengerStats, session),
@@ -298,7 +298,7 @@ export class ChallengeService {
 
       // Commit the transaction
       await session.commitTransaction();
-      
+
       logger.info(
         `Processed result for challenge ${challengeId}: ${winnerTeamId} won with score ${score}`,
       );

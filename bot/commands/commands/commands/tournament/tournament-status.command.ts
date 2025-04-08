@@ -57,7 +57,7 @@ export async function handleUpdateStatus(interaction: ChatInputCommandInteractio
 
       // Send public notification to tournament channel
       const tournamentChannel = interaction.guild?.channels.cache.find(
-        channel => channel.name === 'tournament' && channel.type === ChannelType.GuildText
+        channel => channel.name === 'tournament' && channel.type === ChannelType.GuildText,
       ) as TextChannel | undefined;
 
       if (tournamentChannel) {

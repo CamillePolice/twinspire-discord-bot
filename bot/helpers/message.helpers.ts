@@ -5,8 +5,6 @@ import {
   GuildMember,
   HexColorString,
   ColorResolvable,
-  RestOrArray,
-  APIApplicationCommandOptionChoice,
 } from 'discord.js';
 import { ChallengeStatus } from '../database/enums/challenge.enums';
 import { Role } from '../database/enums/role.enums';

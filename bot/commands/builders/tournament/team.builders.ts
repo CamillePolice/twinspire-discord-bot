@@ -219,7 +219,7 @@ const buildSubmitResultSubcommand: SubcommandBuilder = {
             { name: '3-2', value: '3-2' },
             { name: '2-3', value: '2-3' },
             { name: '1-3', value: '1-3' },
-            { name: '0-3', value: '0-3' }
+            { name: '0-3', value: '0-3' },
           ),
       ),
 };

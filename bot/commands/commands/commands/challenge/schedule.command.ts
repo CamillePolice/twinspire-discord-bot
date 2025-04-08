@@ -112,8 +112,12 @@ export async function handleScheduleChallenge(
       await interaction.editReply({ embeds: [embed] });
 
       // Variables to store team information for both DMs and public announcement
-      const challengerTeam = await TeamTournament.findById(challenge.challengerTeamTournament).populate<{ team: ITeam }>('team');
-      const defendingTeam = await TeamTournament.findById(challenge.defendingTeamTournament).populate<{ team: ITeam }>('team');
+      const challengerTeam = await TeamTournament.findById(
+        challenge.challengerTeamTournament,
+      ).populate<{ team: ITeam }>('team');
+      const defendingTeam = await TeamTournament.findById(
+        challenge.defendingTeamTournament,
+      ).populate<{ team: ITeam }>('team');
 
       if (!challengerTeam || !defendingTeam) {
         logger.error(`Could not find teams for challenge ${challengeId}`);
@@ -134,7 +138,9 @@ export async function handleScheduleChallenge(
       }
 
       // Fetch Discord users for both captains
-      const challengerCaptainUser = await interaction.client.users.fetch(challengerCaptain.discordId);
+      const challengerCaptainUser = await interaction.client.users.fetch(
+        challengerCaptain.discordId,
+      );
       const defendingCaptainUser = await interaction.client.users.fetch(defendingCaptain.discordId);
 
       // Create notification embed
@@ -153,7 +159,8 @@ export async function handleScheduleChallenge(
         },
         {
           name: 'Next Steps',
-          value: 'Prepare for the challenge at the scheduled time. After the match, use `/team-challenge submit_result` to report the outcome.',
+          value:
+            'Prepare for the challenge at the scheduled time. After the match, use `/team-challenge submit_result` to report the outcome.',
         },
       );
 

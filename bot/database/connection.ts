@@ -12,10 +12,10 @@ const url = 'mongodb://admin:password@mongo:27017/twinspire?authSource=admin';
 export const initializeDatabaseConnection = async (): Promise<void> => {
   try {
     logger.info(`Connecting to MongoDB at ${url.replace(/\/\/(.+?)@/, '//****:****@')}`);
-    
+
     await mongoose.connect(url, mongooseConfig);
-    
-    mongoose.connection.on('error', (error) => {
+
+    mongoose.connection.on('error', error => {
       logger.error('MongoDB connection error:', error);
     });
 

@@ -184,7 +184,7 @@ export class TeamService {
 
   /**
    * Updates team stats after a challenge
-   * 
+   *
    * @param teamTournament - Team tournament object to update
    * @param stats - Stats to update (tier, prestige, etc.)
    * @param session - Optional MongoDB session for transaction support
@@ -193,7 +193,7 @@ export class TeamService {
   async updateTeamStats(
     teamTournament: ITeamTournament,
     stats: { tier: number; prestige: number; wins?: number; losses?: number; winStreak?: number },
-    session?: ClientSession
+    session?: ClientSession,
   ): Promise<boolean> {
     try {
       const updateData: any = {
@@ -211,7 +211,7 @@ export class TeamService {
       const result = await TeamTournament.updateOne(
         { _id: teamTournament._id },
         { $set: updateData },
-        session ? { session } : {}
+        session ? { session } : {},
       );
 
       if (result.modifiedCount === 0) {
@@ -350,7 +350,7 @@ export class TeamService {
 
       await teamTournament.save();
 
-      console.log(`LOG || teamTournament ->`, teamTournament)
+      console.log(`LOG || teamTournament ->`, teamTournament);
 
       // Add this tournament entry to the team's tournaments array
       await Team.updateOne(

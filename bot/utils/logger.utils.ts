@@ -27,7 +27,6 @@ const getTimestamp = (): string => {
 // Main logger function
 export const logger = {
   error: (message: string, error?: unknown): void => {
-
     const timestamp = getTimestamp();
     const logMessage = `[${timestamp}] [${LogLevel.ERROR}] ${message}${error ? ': ' + (error as Error).stack : ''}`;
 

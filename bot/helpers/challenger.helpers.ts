@@ -1,7 +1,7 @@
 import { IChallenge } from '../database/models/challenge.model';
 import { ITournament } from '../database/models/tournament.model';
 import { ITeamTournament } from '../database/models/team-tournament.model';
-import { Challenge, ITeam, Tournament } from '../database/models';
+import { Challenge, Tournament } from '../database/models';
 import { ChallengeStatus } from '../database/enums/challenge.enums';
 import { logger } from '../utils/logger.utils';
 import { v4 as uuidv4 } from 'uuid';
@@ -196,7 +196,7 @@ export const calculateChallengeOutcome = (
 export const updateTeamAfterChallenge = async (
   teamTournament: ITeamTournament,
   stats: ChallengeStats,
-  session?: ClientSession
+  session?: ClientSession,
 ): Promise<void> => {
   try {
     // Create a compatible stats object with required tier
@@ -205,9 +205,9 @@ export const updateTeamAfterChallenge = async (
       prestige: stats.prestige,
       wins: stats.wins,
       losses: stats.losses,
-      winStreak: stats.winStreak
+      winStreak: stats.winStreak,
     };
-    
+
     await teamService.updateTeamStats(teamTournament, compatibleStats, session);
   } catch (error) {
     logger.error(`Error updating team ${teamTournament.team.name} after challenge:`, error);
@@ -233,7 +233,7 @@ export const validateTeams = async (
       teamService.getTeamByTeamId(challengerTeamId),
       teamService.getTeamByTeamId(defendingTeamId),
     ]);
-    
+
     if (!challengerTeam || !defendingTeam) {
       logger.error(
         `One of the teams doesn't exist: Challenger: ${challengerTeamId}, Defending: ${defendingTeamId}`,
@@ -247,7 +247,7 @@ export const validateTeams = async (
       logger.error(`Tournament ${tournamentId} not found`);
       return null;
     }
-    
+
     const challengerTeamTournament = getTeamTournament(
       mongoTournament._id,
       challengerTeam.tournaments || [],

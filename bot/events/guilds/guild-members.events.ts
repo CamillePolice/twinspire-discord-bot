@@ -224,7 +224,9 @@ export async function guildMemberAdd(member: GuildMember): Promise<void> {
       });
     }
 
-    logger.info(`Added/updated user ${member.user.username} (${member.id}) in guild ${member.guild.name}`);
+    logger.info(
+      `Added/updated user ${member.user.username} (${member.id}) in guild ${member.guild.name}`,
+    );
   } catch (error) {
     logger.error(`Error processing guild member add for ${member.id}:`, error as Error);
   }
@@ -347,7 +349,9 @@ export async function guildMemberRemove(member: GuildMember): Promise<void> {
       },
     );
 
-    logger.info(`Removed user ${member.user.username} (${member.id}) from guild ${member.guild.name}`);
+    logger.info(
+      `Removed user ${member.user.username} (${member.id}) from guild ${member.guild.name}`,
+    );
   } catch (error) {
     logger.error(`Error processing guild member remove for ${member.id}:`, error as Error);
   }

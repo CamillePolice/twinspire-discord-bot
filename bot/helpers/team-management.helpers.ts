@@ -143,7 +143,7 @@ export const getRoleIcon = (role: Role): string => {
     [Role.SUPPORT]: '🛡️',
     [Role.FILL]: '🔄',
     [Role.COACH]: '📊',
-    [Role.LITTLE_LEGEND]: '🌟'
+    [Role.LITTLE_LEGEND]: '🌟',
   };
   return roleIcons[role] || '❓';
 };
