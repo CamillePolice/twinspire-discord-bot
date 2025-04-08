@@ -1,7 +1,7 @@
 import { IChallenge } from '../database/models/challenge.model';
 import { ITournament } from '../database/models/tournament.model';
 import { ITeamTournament } from '../database/models/team-tournament.model';
-import { Challenge, Tournament } from '../database/models';
+import { Challenge, ITeam, Tournament } from '../database/models';
 import { ChallengeStatus } from '../database/enums/challenge.enums';
 import { logger } from '../utils/logger.utils';
 import { v4 as uuidv4 } from 'uuid';
@@ -188,17 +188,17 @@ export const calculateChallengeOutcome = (
 /**
  * Helper method to update team stats after a challenge
  *
- * @param teamId - ID of the team to update
+ * @param team - Team object to update
  * @param stats - Object containing stats to update (tier, prestige, etc.)
  */
 export const updateTeamAfterChallenge = async (
-  teamId: string,
+  teamTournament: ITeamTournament,
   stats: ChallengeStats,
 ): Promise<void> => {
   try {
-    await teamService.updateTeamStats(teamId, stats);
+    await teamService.updateTeamStats(teamTournament, stats);
   } catch (error) {
-    logger.error(`Error updating team ${teamId} after challenge:`, error);
+    logger.error(`Error updating team ${teamTournament.team.name} after challenge:`, error);
     throw error;
   }
 };
@@ -221,8 +221,6 @@ export const validateTeams = async (
       teamService.getTeamByTeamId(challengerTeamId),
       teamService.getTeamByTeamId(defendingTeamId),
     ]);
-    console.log(`LOG || defendingTeam ->`, defendingTeam)
-    console.log(`LOG || challengerTeam ->`, challengerTeam)
     
     if (!challengerTeam || !defendingTeam) {
       logger.error(

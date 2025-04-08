@@ -1,4 +1,5 @@
 import { Schema, model, Model } from 'mongoose';
+import { ITeamTournament } from './team-tournament.model';
 
 const challengeSchema: Schema = new Schema(
   {
@@ -118,8 +119,8 @@ export interface IChallenge {
   _id: Schema.Types.ObjectId;
   challengeId: string;
   tournamentId: string;
-  challengerTeamTournament: Schema.Types.ObjectId & { team: { name: string } };
-  defendingTeamTournament: Schema.Types.ObjectId & { team: { name: string } };
+  challengerTeamTournament: ITeamTournament;
+  defendingTeamTournament: ITeamTournament;
   status: 'pending' | 'scheduled' | 'completed' | 'cancelled' | 'forfeited';
   scheduledDate?: Date;
   proposedDates?: Date[];

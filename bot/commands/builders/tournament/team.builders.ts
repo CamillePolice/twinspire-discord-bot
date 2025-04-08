@@ -198,6 +198,29 @@ const buildSubmitResultSubcommand: SubcommandBuilder = {
           .setDescription('Result of the challenge')
           .setRequired(true)
           .addChoices({ name: 'Win', value: 'win' }, { name: 'Loss', value: 'loss' }),
+      )
+      .addStringOption(option =>
+        option
+          .setName('score')
+          .setDescription('Score of the challenge')
+          .setRequired(true)
+          .addChoices(
+            // Best of 1
+            { name: '1-0', value: '1-0' },
+            { name: '0-1', value: '0-1' },
+            // Best of 3
+            { name: '2-0', value: '2-0' },
+            { name: '2-1', value: '2-1' },
+            { name: '1-2', value: '1-2' },
+            { name: '0-2', value: '0-2' },
+            // Best of 5
+            { name: '3-0', value: '3-0' },
+            { name: '3-1', value: '3-1' },
+            { name: '3-2', value: '3-2' },
+            { name: '2-3', value: '2-3' },
+            { name: '1-3', value: '1-3' },
+            { name: '0-3', value: '0-3' }
+          ),
       ),
 };
 

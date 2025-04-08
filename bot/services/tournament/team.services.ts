@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../../utils/logger.utils';
 import Team, { ITeam, ITeamMember } from '../../database/models/team.model';
-import { Challenge, TeamTournament, Tournament } from '../../database/models';
+import { Challenge, ITeamTournament, TeamTournament, Tournament } from '../../database/models';
 
 export class TeamService {
   constructor() {}
@@ -183,7 +183,7 @@ export class TeamService {
   /**
    * Updates a team's statistics
    *
-   * @param teamId - ID of the team
+   * @param teamName - Team name
    * @param updates - Object containing stats to update:
    *   - tier: New tier ranking
    *   - winStreak: Current win streak
@@ -194,7 +194,7 @@ export class TeamService {
    * @returns Boolean indicating success
    */
   async updateTeamStats(
-    teamId: string,
+    teamTournament: ITeamTournament,
     updates: {
       tier?: number;
       winStreak?: number;
@@ -204,6 +204,8 @@ export class TeamService {
       losses?: number;
     },
   ): Promise<boolean> {
+    console.log(`LOG || updates ->`, updates)
+    console.log(`LOG || teamId ->`, teamTournament)
     try {
       interface UpdateOperation {
         $set: Record<string, unknown>;
@@ -224,13 +226,15 @@ export class TeamService {
           delete updateOperation.$set[key];
         });
       }
+      console.log(`LOG || updateOperation ->`, updateOperation)
 
-      const result = await Team.updateOne({ teamId }, updateOperation);
+      const result = await TeamTournament.updateOne({ _id: teamTournament._id }, updateOperation);
 
-      logger.info(`Updated stats for team ${teamId}`);
+      const team = await Team.findById(teamTournament.team);
+      logger.info(`Updated stats for team ${team?.name}`);
       return result.modifiedCount > 0;
     } catch (error) {
-      logger.error(`Error updating team stats for ${teamId}:`, error);
+      logger.error(`Error updating team stats for ${teamTournament.team.name}:`, error);
       throw error;
     }
   }

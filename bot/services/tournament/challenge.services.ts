@@ -14,6 +14,7 @@ import {
 import { validateTournament } from '../../helpers/challenger.helpers';
 import { validateTeams } from '../../helpers/challenger.helpers';
 import { ChallengeResult } from '../../types/challenge-result.types';
+import { ITeam, Team } from '../../database/models';
 
 /**
  * Service class for managing team challenges within tournaments
@@ -117,7 +118,9 @@ export class ChallengeService {
    */
   async getChallengeById(challengeId: string): Promise<IChallenge | null> {
     try {
-      return await Challenge.findOne({ challengeId });
+      return await Challenge.findOne({ challengeId })
+        .populate('challengerTeamTournament')
+        .populate('defendingTeamTournament');
     } catch (error) {
       logger.error(`Error fetching challenge ${challengeId}:`, error);
       throw error;
@@ -218,6 +221,7 @@ export class ChallengeService {
 
       // Get challenge data
       const challenge = await this.getChallengeById(challengeId);
+
       if (!challenge) {
         logger.error(`Challenge ${challengeId} not found`);
         return false;
@@ -225,14 +229,22 @@ export class ChallengeService {
 
       const tournamentId = challenge.tournamentId;
 
+      const challengerTeam = await Team.findById(challenge.challengerTeamTournament.team);
+      const defendingTeam = await Team.findById(challenge.defendingTeamTournament.team);
+      
+      if (!challengerTeam || !defendingTeam) {
+        logger.error(`Could not find teams for challenge ${challengeId}`);
+        return false;
+      }
+      
+      //console.log(`LOG || challengerTeam ->`, challengerTeam)
+      //console.log(`LOG || defendingTeam ->`, defendingTeam)
+      //console.log(`LOG || tournamentId ->`, tournamentId);
+      //console.log(`LOG || challengeeeeeee ->`, challenge);
       // Validate tournament and teams
       const [tournament, teamValidation] = await Promise.all([
         validateTournament(tournamentId),
-        validateTeams(
-          challenge.challengerTeamTournament.toString(),
-          challenge.defendingTeamTournament.toString(),
-          tournamentId,
-        ),
+        validateTeams(challengerTeam.teamId, defendingTeam.teamId, tournamentId),
       ]);
 
       if (!tournament || !teamValidation) return false;
@@ -269,11 +281,11 @@ export class ChallengeService {
         logger.error(`Failed to update challenge ${challengeId} with result`);
         return false;
       }
-
+      
       // Update team stats
       await Promise.all([
-        updateTeamAfterChallenge(challenge.challengerTeamTournament.toString(), challengerStats),
-        updateTeamAfterChallenge(challenge.defendingTeamTournament.toString(), defenderStats),
+        updateTeamAfterChallenge(challengerTeamTournament, challengerStats),
+        updateTeamAfterChallenge(defendingTeamTournament, defenderStats),
       ]);
 
       logger.info(
