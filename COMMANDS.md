@@ -11,6 +11,21 @@ This document provides a comprehensive list of all available commands in the Twi
 
 ## Admin Commands
 
+### Admin Challenge Management
+- **Command**: `/admin-challenge`
+- **Description**: Admin commands for tournament challenge management
+- **Permissions**: Admin only
+- **Subcommands**:
+  - `view`: View challenge details
+  - `check_timeouts`: Check for challenges that have exceeded response time limits
+  - `force_result`: Force a challenge result (admin decision)
+  - `forfeit`: Force a team to forfeit a challenge
+  - `cancel`: Cancel a challenge (no tier changes)
+  - `create_team`: Create a new team with specified captain and role
+  - `update_team_member`: Update a team member's role and OP.GG link
+  - `remove_team_member`: Remove a member from a team
+  - `add_team_member`: Add a member to a team
+
 ### Check Timeouts
 - **Command**: `/check-timeouts`
 - **Description**: Check for any pending timeouts in the system
