@@ -10,7 +10,7 @@ import { handleCancel } from './commands/admin/cancel.command';
 import { handleAdminCreateTeam } from './commands/admin/create-team.command';
 import { handleAdminUpdateTeamMember } from './commands/admin/admin-update-team.command';
 import { handleAdminRemoveTeamMember } from './commands/admin/admin-remove-team-member.command';
-
+import { handleAdminAddTeamMember } from './commands/admin/admin-add-team-member.command';
 export {
   handleChallenge,
   handleProposeDates,
@@ -24,4 +24,5 @@ export {
   handleAdminCreateTeam,
   handleAdminUpdateTeamMember,
   handleAdminRemoveTeamMember,
+  handleAdminAddTeamMember,
 };
