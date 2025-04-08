@@ -7,6 +7,7 @@ import { handleCheckTimeouts } from './commands/admin/check-timeouts.command';
 import { handleForceResult } from './commands/admin/force-result.command';
 import { handleForfeit } from './commands/admin/forfeit.command';
 import { handleCancel } from './commands/admin/cancel.command';
+import { handleAdminCreateTeam } from './commands/admin/create-team.command';
 
 export {
   handleChallenge,
@@ -18,4 +19,5 @@ export {
   handleForceResult,
   handleForfeit,
   handleCancel,
+  handleAdminCreateTeam,
 };

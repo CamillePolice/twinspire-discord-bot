@@ -5,6 +5,7 @@ import {
 } from 'discord.js';
 import { TournamentCommandBuilder, SubcommandBuilder } from '../../types';
 import { handleAdminCommand } from '../../handlers/admin.handlers';
+import { Role } from '../../../database/enums/role.enums';
 
 const buildViewSubcommand: SubcommandBuilder = {
   build: (subcommand: SlashCommandSubcommandBuilder) =>
@@ -108,6 +109,42 @@ const buildCancelSubcommand: SubcommandBuilder = {
       ),
 };
 
+const buildCreateTeamSubcommand: SubcommandBuilder = {
+  build: (subcommand: SlashCommandSubcommandBuilder) =>
+    subcommand
+      .setName('create_team')
+      .setDescription('Create a new team (Admin only)')
+      .addStringOption(option =>
+        option.setName('name').setDescription('Name of the team').setRequired(true),
+      )
+      .addUserOption(option =>
+        option
+          .setName('captain')
+          .setDescription('Discord user to be set as team captain')
+          .setRequired(true),
+      )
+      .addStringOption(option =>
+        option
+          .setName('captain_role')
+          .setDescription('Role of the captain in the team')
+          .setRequired(true)
+          .addChoices(
+            { name: 'Top', value: Role.TOP },
+            { name: 'Jungle', value: Role.JUNGLE },
+            { name: 'Mid', value: Role.MID },
+            { name: 'ADC', value: Role.ADC },
+            { name: 'Support', value: Role.SUPPORT },
+            { name: 'Fill', value: Role.FILL },
+          ),
+      )
+      .addStringOption(option =>
+        option
+          .setName('captain_opgg')
+          .setDescription('OP.GG profile URL of the captain')
+          .setRequired(false),
+      ),
+};
+
 export const buildAdminChallengeCommand: TournamentCommandBuilder = {
   data: new SlashCommandBuilder()
     .setName('admin-challenge')
@@ -117,6 +154,7 @@ export const buildAdminChallengeCommand: TournamentCommandBuilder = {
     .addSubcommand(buildCheckTimeoutsSubcommand.build)
     .addSubcommand(buildForceResultSubcommand.build)
     .addSubcommand(buildForfeitSubcommand.build)
-    .addSubcommand(buildCancelSubcommand.build) as SlashCommandBuilder,
+    .addSubcommand(buildCancelSubcommand.build)
+    .addSubcommand(buildCreateTeamSubcommand.build) as SlashCommandBuilder,
   execute: handleAdminCommand.execute,
 };

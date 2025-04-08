@@ -7,9 +7,10 @@ import {
   handleForceResult,
   handleForfeit,
   handleCancel,
+  handleAdminCreateTeam,
 } from '../commands/admin.commands';
 
-type AdminSubcommand = 'view' | 'check_timeouts' | 'force_result' | 'forfeit' | 'cancel';
+type AdminSubcommand = 'view' | 'check_timeouts' | 'force_result' | 'forfeit' | 'cancel' | 'create_team';
 
 const handlers: Record<
   AdminSubcommand,
@@ -20,6 +21,7 @@ const handlers: Record<
   force_result: handleForceResult,
   forfeit: handleForfeit,
   cancel: handleCancel,
+  create_team: handleAdminCreateTeam,
 };
 
 export const handleAdminCommand: TournamentCommandHandler = {
