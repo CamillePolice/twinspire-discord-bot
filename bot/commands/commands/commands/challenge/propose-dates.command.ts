@@ -8,7 +8,7 @@ import {
   StatusIcons,
 } from '../../../../helpers/message.helpers';
 import { TeamTournament } from '../../../../database/models';
-import { ITeamMember } from '../../../../database/models/team.model';
+import { ITeam, ITeamMember } from '../../../../database/models/team.model';
 
 const challengeService = new ChallengeService();
 
