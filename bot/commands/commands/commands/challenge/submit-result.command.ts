@@ -1,13 +1,13 @@
 import { ChatInputCommandInteraction } from 'discord.js';
-import { logger } from '../../../utils/logger.utils';
-import { ChallengeService } from '../../../services/tournament/challenge.services';
+import { logger } from '../../../../utils/logger.utils';
+import { ChallengeService } from '../../../../services/tournament/challenge.services';
 import {
   createErrorEmbed,
   createChallengeEmbed,
   StatusIcons,
-} from '../../../helpers/message.helpers';
-import { TeamTournament, Team } from '../../../database/models';
-import { Schema } from 'mongoose';
+} from '../../../../helpers/message.helpers';
+import { TeamTournament, Team } from '../../../../database/models';
+import { ChallengeStatus } from '../../../../database/enums/challenge.enums';
 
 const challengeService = new ChallengeService();
 
@@ -45,14 +45,26 @@ export async function handleSubmitResult(interaction: ChatInputCommandInteractio
       return;
     }
 
+    // Check if the challenge is already completed
+    if (challenge.status === ChallengeStatus.COMPLETED) {
+      const embed = createErrorEmbed(
+        'Challenge Already Completed',
+        `Challenge ${challengeId} has already been completed.`,
+        'Results cannot be submitted for completed challenges.',
+      );
+      await interaction.editReply({ embeds: [embed] });
+      return;
+    }
+
     // Get team names for better display
     // Check if challengerTeamTournament is an ObjectId or already populated
-    const challengerTeamTournamentId = typeof challenge.challengerTeamTournament === 'string' 
-      ? challenge.challengerTeamTournament 
-      : (challenge.challengerTeamTournament as any)._id || challenge.challengerTeamTournament;
-    
+    const challengerTeamTournamentId =
+      typeof challenge.challengerTeamTournament === 'string'
+        ? challenge.challengerTeamTournament
+        : challenge.challengerTeamTournament._id || challenge.challengerTeamTournament;
+
     const challengerTeamTournament = await TeamTournament.findById(
-      challengerTeamTournamentId
+      challengerTeamTournamentId,
     ).populate({
       path: 'team',
       select: 'name',
@@ -63,12 +75,13 @@ export async function handleSubmitResult(interaction: ChatInputCommandInteractio
     );
 
     // Check if defendingTeamTournament is an ObjectId or already populated
-    const defendingTeamTournamentId = typeof challenge.defendingTeamTournament === 'string' 
-      ? challenge.defendingTeamTournament 
-      : (challenge.defendingTeamTournament as any)._id || challenge.defendingTeamTournament;
-    
+    const defendingTeamTournamentId =
+      typeof challenge.defendingTeamTournament === 'string'
+        ? challenge.defendingTeamTournament
+        : (challenge.defendingTeamTournament as any)._id || challenge.defendingTeamTournament;
+
     const defendingTeamTournament = await TeamTournament.findById(
-      defendingTeamTournamentId
+      defendingTeamTournamentId,
     ).populate({
       path: 'team',
       select: 'name',

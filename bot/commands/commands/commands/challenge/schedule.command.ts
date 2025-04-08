@@ -1,15 +1,15 @@
 import { ChatInputCommandInteraction, TextChannel } from 'discord.js';
-import { logger } from '../../../utils/logger.utils';
-import { ChallengeService } from '../../../services/tournament/challenge.services';
+import { logger } from '../../../../utils/logger.utils';
+import { ChallengeService } from '../../../../services/tournament/challenge.services';
 import {
   createErrorEmbed,
   createChallengeEmbed,
   formatTimestamp,
   StatusIcons,
-} from '../../../helpers/message.helpers';
-import { ChallengeStatus } from '../../../database/enums/challenge.enums';
-import { TeamTournament } from '../../../database/models';
-import { ITeamMember, ITeam } from '../../../database/models/team.model';
+} from '../../../../helpers/message.helpers';
+import { ChallengeStatus } from '../../../../database/enums/challenge.enums';
+import { TeamTournament } from '../../../../database/models';
+import { ITeamMember, ITeam } from '../../../../database/models/team.model';
 
 const challengeService = new ChallengeService();
 

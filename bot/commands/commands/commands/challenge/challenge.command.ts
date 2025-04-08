@@ -1,12 +1,12 @@
 import { ChatInputCommandInteraction } from 'discord.js';
-import { logger } from '../../../utils/logger.utils';
-import { ChallengeService } from '../../../services/tournament/challenge.services';
-import Team from '../../../database/models/team.model';
+import { logger } from '../../../../utils/logger.utils';
+import { ChallengeService } from '../../../../services/tournament/challenge.services';
+import Team from '../../../../database/models/team.model';
 import {
   createErrorEmbed,
   createChallengeEmbed,
   StatusIcons,
-} from '../../../helpers/message.helpers';
+} from '../../../../helpers/message.helpers';
 
 const challengeService = new ChallengeService();
 

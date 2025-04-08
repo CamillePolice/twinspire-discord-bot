@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
-import { logger } from '../../../utils/logger.utils';
-import { ChallengeService } from '../../../services/tournament/challenge.services';
+import { logger } from '../../../../utils/logger.utils';
+import { ChallengeService } from '../../../../services/tournament/challenge.services';
 
 const challengeService = new ChallengeService();
 
