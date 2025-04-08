@@ -12,6 +12,7 @@ import { ChallengeStats } from '../types/challenge-stat.types';
 import { TeamTournamentPair } from '../types/tournament-team-pair.types';
 import { TeamPair } from '../types/team-pair.types';
 import { Schema } from 'mongoose';
+import { ClientSession } from 'mongoose';
 
 const teamService = new TeamService();
 const tournamentService = new TournamentService();
@@ -190,13 +191,24 @@ export const calculateChallengeOutcome = (
  *
  * @param team - Team object to update
  * @param stats - Object containing stats to update (tier, prestige, etc.)
+ * @param session - Optional MongoDB session for transaction support
  */
 export const updateTeamAfterChallenge = async (
   teamTournament: ITeamTournament,
   stats: ChallengeStats,
+  session?: ClientSession
 ): Promise<void> => {
   try {
-    await teamService.updateTeamStats(teamTournament, stats);
+    // Create a compatible stats object with required tier
+    const compatibleStats = {
+      tier: stats.tier !== undefined ? stats.tier : teamTournament.tier,
+      prestige: stats.prestige,
+      wins: stats.wins,
+      losses: stats.losses,
+      winStreak: stats.winStreak
+    };
+    
+    await teamService.updateTeamStats(teamTournament, compatibleStats, session);
   } catch (error) {
     logger.error(`Error updating team ${teamTournament.team.name} after challenge:`, error);
     throw error;

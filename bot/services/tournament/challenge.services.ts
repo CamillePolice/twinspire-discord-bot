@@ -14,7 +14,8 @@ import {
 import { validateTournament } from '../../helpers/challenger.helpers';
 import { validateTeams } from '../../helpers/challenger.helpers';
 import { ChallengeResult } from '../../types/challenge-result.types';
-import { ITeam, Team } from '../../database/models';
+import { Team } from '../../database/models';
+import { startSession } from 'mongoose';
 
 /**
  * Service class for managing team challenges within tournaments
@@ -215,6 +216,10 @@ export class ChallengeService {
     score: string,
     games: { winner: string; loser: string; duration?: number }[],
   ): Promise<boolean> {
+    // Start a session for transaction
+    const session = await startSession();
+    session.startTransaction();
+    
     try {
       // Create a properly typed result object
       const result: ChallengeResult = { winner: winnerTeamId, score, games };
@@ -224,6 +229,7 @@ export class ChallengeService {
 
       if (!challenge) {
         logger.error(`Challenge ${challengeId} not found`);
+        await session.abortTransaction();
         return false;
       }
 
@@ -234,20 +240,20 @@ export class ChallengeService {
       
       if (!challengerTeam || !defendingTeam) {
         logger.error(`Could not find teams for challenge ${challengeId}`);
+        await session.abortTransaction();
         return false;
       }
       
-      //console.log(`LOG || challengerTeam ->`, challengerTeam)
-      //console.log(`LOG || defendingTeam ->`, defendingTeam)
-      //console.log(`LOG || tournamentId ->`, tournamentId);
-      //console.log(`LOG || challengeeeeeee ->`, challenge);
       // Validate tournament and teams
       const [tournament, teamValidation] = await Promise.all([
         validateTournament(tournamentId),
         validateTeams(challengerTeam.teamId, defendingTeam.teamId, tournamentId),
       ]);
 
-      if (!tournament || !teamValidation) return false;
+      if (!tournament || !teamValidation) {
+        await session.abortTransaction();
+        return false;
+      }
 
       const { challengerTeamTournament, defendingTeamTournament } = teamValidation;
 
@@ -275,26 +281,36 @@ export class ChallengeService {
             updatedAt: new Date(),
           },
         },
+        { session }
       );
 
       if (resultUpdate.modifiedCount === 0) {
         logger.error(`Failed to update challenge ${challengeId} with result`);
+        await session.abortTransaction();
         return false;
       }
       
-      // Update team stats
+      // Update team stats within the transaction
       await Promise.all([
-        updateTeamAfterChallenge(challengerTeamTournament, challengerStats),
-        updateTeamAfterChallenge(defendingTeamTournament, defenderStats),
+        updateTeamAfterChallenge(challengerTeamTournament, challengerStats, session),
+        updateTeamAfterChallenge(defendingTeamTournament, defenderStats, session),
       ]);
 
+      // Commit the transaction
+      await session.commitTransaction();
+      
       logger.info(
         `Processed result for challenge ${challengeId}: ${winnerTeamId} won with score ${score}`,
       );
       return true;
     } catch (error) {
+      // Abort the transaction on error
+      await session.abortTransaction();
       logger.error(`Error submitting result for challenge ${challengeId}:`, error);
       throw error;
+    } finally {
+      // End the session
+      session.endSession();
     }
   }
 
@@ -389,7 +405,7 @@ export class ChallengeService {
           { challengerTeamTournament: teamTournamentId },
           { defendingTeamTournament: teamTournamentId },
         ],
-        status: { $in: ['pending', 'scheduled'] },
+        status: { $in: [ChallengeStatus.PENDING, ChallengeStatus.SCHEDULED] },
       })
         .populate({
           path: 'challengerTeamTournament',

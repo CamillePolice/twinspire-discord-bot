@@ -2,6 +2,22 @@ import { Client, TextChannel } from 'discord.js';
 import { TournamentService } from '../services/tournament/tournament.services';
 import { ChallengeService } from '../services/tournament/challenge.services';
 import { logger } from '../utils/logger.utils';
+import { startSession } from 'mongoose';
+import { IChallenge, ITeamTournament, ITournament } from '../database/models';
+
+/**
+ * Configuration options for the tournament maintenance scheduler
+ */
+interface MaintenanceConfig {
+  /** Default grace period in days for overdue challenges */
+  defaultGracePeriodDays: number;
+  /** Maximum number of retries for failed operations */
+  maxRetries: number;
+  /** Delay between retries in milliseconds */
+  retryDelayMs: number;
+  /** Batch size for processing challenges */
+  batchSize: number;
+}
 
 /**
  * Class to handle scheduled tournament maintenance tasks
@@ -12,11 +28,21 @@ export class TournamentMaintenanceScheduler {
   private challengeService: ChallengeService;
   private maintenanceChannelId: string | null = null;
   private isRunning: boolean = false;
+  private config: MaintenanceConfig;
 
-  constructor(client: Client) {
+  constructor(client: Client, config?: Partial<MaintenanceConfig>) {
     this.client = client;
     this.tournamentService = new TournamentService();
     this.challengeService = new ChallengeService();
+
+    // Default configuration
+    this.config = {
+      defaultGracePeriodDays: 2,
+      maxRetries: 3,
+      retryDelayMs: 5000,
+      batchSize: 10,
+      ...config,
+    };
   }
 
   /**
@@ -124,11 +150,35 @@ export class TournamentMaintenanceScheduler {
         `Found ${overdueResponses.length} overdue challenges in tournament ${tournament.name}`,
       );
 
-      // Get team details with populated team information
-      const teams = await this.tournamentService.getTournamentStandings(tournamentId);
+      // Process challenges in batches to avoid memory issues
+      for (let i = 0; i < overdueResponses.length; i += this.config.batchSize) {
+        const batch = overdueResponses.slice(i, i + this.config.batchSize);
 
-      // Process each overdue challenge
-      for (const challenge of overdueResponses) {
+        // Get team details with populated team information for this batch
+        const teams = await this.tournamentService.getTournamentStandings(tournamentId);
+
+        // Process each challenge in the batch
+        await Promise.all(
+          batch.map(challenge => this.processChallenge(challenge, teams, tournament)),
+        );
+      }
+    } catch (error) {
+      logger.error(`Error processing overdue challenges for tournament ${tournamentId}: ${error}`);
+    }
+  }
+
+  /**
+   * Process a single challenge with retry mechanism
+   */
+  private async processChallenge(
+    challenge: IChallenge,
+    teams: ITeamTournament[],
+    tournament: ITournament,
+  ): Promise<void> {
+    let retries = 0;
+
+    while (retries < this.config.maxRetries) {
+      try {
         const challengerTeam = teams.find(
           team => team._id.toString() === challenge.challengerTeamTournament.toString(),
         );
@@ -136,29 +186,37 @@ export class TournamentMaintenanceScheduler {
           team => team._id.toString() === challenge.defendingTeamTournament.toString(),
         );
 
-        // Only auto-forfeit challenges that are more than 2 days past the deadline
+        // Get grace period from tournament rules or use default
+        const gracePeriodDays =
+          tournament.rules.gracePeriodDays || this.config.defaultGracePeriodDays;
+
+        // Only auto-forfeit challenges that are more than grace period past the deadline
         const createdDate = new Date(challenge.createdAt);
         const responseDeadline = new Date(createdDate);
         responseDeadline.setDate(
           responseDeadline.getDate() + tournament.rules.challengeTimeframeInDays,
         );
 
-        const twoDaysAfterDeadline = new Date(responseDeadline);
-        twoDaysAfterDeadline.setDate(twoDaysAfterDeadline.getDate() + 2);
+        const gracePeriodEnd = new Date(responseDeadline);
+        gracePeriodEnd.setDate(gracePeriodEnd.getDate() + gracePeriodDays);
 
         const now = new Date();
 
-        if (now < twoDaysAfterDeadline) {
+        if (now < gracePeriodEnd) {
           logger.info(
-            `Challenge ${challenge.challengeId} is overdue but within grace period, skipping auto-forfeit`,
+            `Challenge ${challenge.challengeId} is overdue but within grace period (${gracePeriodDays} days), skipping auto-forfeit`,
           );
-          continue;
+          return;
         }
 
         // Auto-forfeit the challenge (defender loses)
         logger.info(
           `Auto-forfeiting challenge ${challenge.challengeId} due to no response from defender`,
         );
+
+        // Use a transaction to ensure data consistency
+        const session = await startSession();
+        session.startTransaction();
 
         try {
           // Submit forfeit
@@ -177,15 +235,37 @@ export class TournamentMaintenanceScheduler {
               challengerTeam?.team?.captainId,
               defendingTeam?.team?.captainId,
             );
+
+            // Commit the transaction
+            await session.commitTransaction();
+            return;
           } else {
             logger.error(`Failed to auto-forfeit challenge ${challenge.challengeId}`);
+            await session.abortTransaction();
+            throw new Error('Failed to forfeit challenge');
           }
         } catch (error) {
-          logger.error(`Error auto-forfeiting challenge ${challenge.challengeId}: ${error}`);
+          await session.abortTransaction();
+          throw error;
+        } finally {
+          session.endSession();
         }
+      } catch (error) {
+        retries++;
+        logger.error(
+          `Error processing challenge ${challenge.challengeId} (attempt ${retries}/${this.config.maxRetries}): ${error}`,
+        );
+
+        if (retries >= this.config.maxRetries) {
+          logger.error(
+            `Failed to process challenge ${challenge.challengeId} after ${this.config.maxRetries} attempts`,
+          );
+          return;
+        }
+
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, this.config.retryDelayMs));
       }
-    } catch (error) {
-      logger.error(`Error processing overdue challenges for tournament ${tournamentId}: ${error}`);
     }
   }
 
@@ -241,5 +321,16 @@ export class TournamentMaintenanceScheduler {
   public setMaintenanceChannel(channelId: string): void {
     this.maintenanceChannelId = channelId;
     logger.info(`Maintenance channel set to ${channelId}`);
+  }
+
+  /**
+   * Update the maintenance configuration
+   */
+  public updateConfig(newConfig: Partial<MaintenanceConfig>): void {
+    this.config = {
+      ...this.config,
+      ...newConfig,
+    };
+    logger.info('Tournament maintenance configuration updated');
   }
 }

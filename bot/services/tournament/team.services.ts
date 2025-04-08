@@ -2,6 +2,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../../utils/logger.utils';
 import Team, { ITeam, ITeamMember } from '../../database/models/team.model';
 import { Challenge, ITeamTournament, TeamTournament, Tournament } from '../../database/models';
+import { ChallengeStatus } from '../../database/enums/challenge.enums';
+import { ClientSession } from 'mongoose';
 
 export class TeamService {
   constructor() {}
@@ -181,60 +183,46 @@ export class TeamService {
   }
 
   /**
-   * Updates a team's statistics
-   *
-   * @param teamName - Team name
-   * @param updates - Object containing stats to update:
-   *   - tier: New tier ranking
-   *   - winStreak: Current win streak
-   *   - protectedUntil: Protection period end date
-   *   - prestige: Prestige points to add
-   *   - wins: Wins to add
-   *   - losses: Losses to add
+   * Updates team stats after a challenge
+   * 
+   * @param teamTournament - Team tournament object to update
+   * @param stats - Stats to update (tier, prestige, etc.)
+   * @param session - Optional MongoDB session for transaction support
    * @returns Boolean indicating success
    */
   async updateTeamStats(
     teamTournament: ITeamTournament,
-    updates: {
-      tier?: number;
-      winStreak?: number;
-      protectedUntil?: Date;
-      prestige?: number;
-      wins?: number;
-      losses?: number;
-    },
+    stats: { tier: number; prestige: number; wins?: number; losses?: number; winStreak?: number },
+    session?: ClientSession
   ): Promise<boolean> {
-    console.log(`LOG || updates ->`, updates)
-    console.log(`LOG || teamId ->`, teamTournament)
     try {
-      interface UpdateOperation {
-        $set: Record<string, unknown>;
-        $inc?: Record<string, number>;
+      const updateData: any = {
+        tier: stats.tier,
+        prestige: stats.prestige,
+        updatedAt: new Date(),
+      };
+
+      // Add optional fields if provided
+      if (stats.wins !== undefined) updateData.wins = stats.wins;
+      if (stats.losses !== undefined) updateData.losses = stats.losses;
+      if (stats.winStreak !== undefined) updateData.winStreak = stats.winStreak;
+
+      // Update the team tournament entry
+      const result = await TeamTournament.updateOne(
+        { _id: teamTournament._id },
+        { $set: updateData },
+        session ? { session } : {}
+      );
+
+      if (result.modifiedCount === 0) {
+        logger.error(`Failed to update stats for team tournament ${teamTournament._id}`);
+        return false;
       }
 
-      const updateObj: Record<string, unknown> = { ...updates, updatedAt: new Date() };
-      const incFields: Record<string, number> = {};
-
-      if (updates.wins) incFields.wins = updates.wins;
-      if (updates.losses) incFields.losses = updates.losses;
-      if (updates.prestige) incFields.prestige = updates.prestige;
-
-      const updateOperation: UpdateOperation = { $set: updateObj };
-      if (Object.keys(incFields).length > 0) {
-        updateOperation.$inc = incFields;
-        Object.keys(incFields).forEach(key => {
-          delete updateOperation.$set[key];
-        });
-      }
-      console.log(`LOG || updateOperation ->`, updateOperation)
-
-      const result = await TeamTournament.updateOne({ _id: teamTournament._id }, updateOperation);
-
-      const team = await Team.findById(teamTournament.team);
-      logger.info(`Updated stats for team ${team?.name}`);
-      return result.modifiedCount > 0;
+      logger.info(`Updated stats for team tournament ${teamTournament._id}`);
+      return true;
     } catch (error) {
-      logger.error(`Error updating team stats for ${teamTournament.team.name}:`, error);
+      logger.error(`Error updating team stats for ${teamTournament._id}:`, error);
       throw error;
     }
   }
@@ -421,7 +409,7 @@ export class TeamService {
       const pendingChallenges = await Challenge.find({
         tournamentId,
         $or: [{ challengerTeamId: teamId }, { defendingTeamId: teamId }],
-        status: { $in: ['pending', 'scheduled'] },
+        status: { $in: [ChallengeStatus.PENDING, ChallengeStatus.SCHEDULED] },
       });
 
       if (pendingChallenges.length > 0) {

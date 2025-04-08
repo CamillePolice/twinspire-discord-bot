@@ -62,6 +62,10 @@ const tournamentSchema: Schema = new Schema(
         type: Number,
         required: true,
       },
+      gracePeriodDays: {
+        type: Number,
+        default: 2,
+      },
     },
     rewards: {
       first: {
@@ -89,6 +93,7 @@ interface IRules {
   protectionDaysAfterDefense: number;
   maxChallengesPerMonth: number;
   minRequiredDateOptions: number;
+  gracePeriodDays?: number;
 }
 
 interface IRewards {
