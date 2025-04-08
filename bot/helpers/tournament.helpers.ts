@@ -19,7 +19,7 @@ export const calculateForfeitResult = (
   const matchFormat = tournament.format;
 
   // Extract the number from the format (e.g., 3 from BO3)
-  const matches = parseInt(matchFormat.replace('BO', ''), 10);
+  const matches = parseInt(matchFormat.replace('B0', ''), 10);
 
   // Calculate the minimum number of wins needed
   const winsNeeded = Math.ceil(matches / 2);

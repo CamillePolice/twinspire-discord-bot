@@ -46,7 +46,10 @@ export async function handleSubmitResult(interaction: ChatInputCommandInteractio
     }
 
     // Check if the challenge is already completed
-    if (challenge.status === ChallengeStatus.COMPLETED) {
+    if (
+      challenge.status === ChallengeStatus.COMPLETED ||
+      challenge.status === ChallengeStatus.CANCELLED
+    ) {
       const embed = createErrorEmbed(
         'Challenge Already Completed',
         `Challenge ${challengeId} has already been completed.`,

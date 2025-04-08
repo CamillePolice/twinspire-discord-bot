@@ -342,6 +342,14 @@ export class ChallengeService {
         return false;
       }
 
+      if (
+        challenge.status === ChallengeStatus.COMPLETED ||
+        challenge.status === ChallengeStatus.CANCELLED
+      ) {
+        logger.error(`Challenge ${challengeId} is already completed`);
+        return false;
+      }
+
       // Get the tournament to determine the format
       const tournament = await validateTournament(challenge.tournamentId);
       if (!tournament) {

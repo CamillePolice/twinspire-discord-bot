@@ -2,9 +2,9 @@ import {
   PermissionFlagsBits,
   SlashCommandBuilder,
   SlashCommandSubcommandBuilder,
-  CommandInteraction,
 } from 'discord.js';
 import { TournamentCommandBuilder, SubcommandBuilder } from '../../types';
+import { handleAdminCommand } from '../../handlers/admin.handlers';
 
 const buildViewSubcommand: SubcommandBuilder = {
   build: (subcommand: SlashCommandSubcommandBuilder) =>
@@ -118,11 +118,5 @@ export const buildAdminChallengeCommand: TournamentCommandBuilder = {
     .addSubcommand(buildForceResultSubcommand.build)
     .addSubcommand(buildForfeitSubcommand.build)
     .addSubcommand(buildCancelSubcommand.build) as SlashCommandBuilder,
-  execute: async (interaction: CommandInteraction) => {
-    // Implementation will be added in the commands file
-    await interaction.reply({
-      content: 'This command is handled by the admin commands handler.',
-      ephemeral: true,
-    });
-  },
+  execute: handleAdminCommand.execute,
 };

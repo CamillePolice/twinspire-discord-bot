@@ -3,10 +3,10 @@ import { handleProposeDates } from './commands/challenge/propose-dates.command';
 import { handleScheduleChallenge } from './commands/challenge/schedule.command';
 import { handleSubmitResult } from './commands/challenge/submit-result.command';
 import { handleViewChallenge } from './commands/challenge/view-challenge.command';
-import { handleCheckTimeouts } from './commands/check-timeouts.command';
-import { handleForceResult } from './commands/force-result.command';
-import { handleForfeit } from './commands/forfeit.command';
-import { handleCancel } from './commands/cancel.command';
+import { handleCheckTimeouts } from './commands/admin/check-timeouts.command';
+import { handleForceResult } from './commands/admin/force-result.command';
+import { handleForfeit } from './commands/admin/forfeit.command';
+import { handleCancel } from './commands/admin/cancel.command';
 
 export {
   handleChallenge,

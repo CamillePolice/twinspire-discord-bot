@@ -1,6 +1,7 @@
 import { ChatInputCommandInteraction } from 'discord.js';
-import { logger } from '../../../utils/logger.utils';
-import { ChallengeService } from '../../../services/tournament/challenge.services';
+import { logger } from '../../../../utils/logger.utils';
+import { ChallengeService } from '../../../../services/tournament/challenge.services';
+import { checkAdminRole } from '../../../../utils/role.utils';
 
 const challengeService = new ChallengeService();
 
@@ -8,6 +9,10 @@ export async function handleCancel(interaction: ChatInputCommandInteraction): Pr
   await interaction.deferReply();
 
   try {
+    if (!(await checkAdminRole(interaction))) {
+      return;
+    }
+
     const challengeId = interaction.options.getString('challenge_id', true);
     const reason = interaction.options.getString('reason', true);
 
