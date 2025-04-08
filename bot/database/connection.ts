@@ -2,8 +2,17 @@ import { logger } from '../utils/logger.utils';
 import mongoose from 'mongoose';
 import { mongooseConfig } from './config';
 
-// Parse MongoDB URI from environment or use default with auth
-const url = 'mongodb://admin:password@mongo:27017/twinspire?authSource=admin';
+// Get MongoDB URI from environment variables with fallback
+const getMongoUri = (): string => {
+  if (process.env.NODE_ENV === 'production') {
+    const username = process.env.MONGO_ROOT_USERNAME || 'admin';
+    const password = process.env.MONGO_ROOT_PASSWORD || 'password';
+    const host = process.env.MONGO_HOST || 'mongodb';
+    const database = process.env.MONGO_DATABASE || 'twinspire';
+    return `mongodb://${username}:${password}@${host}:27017/${database}?authSource=admin`;
+  }
+  return 'mongodb://admin:password@mongo:27017/twinspire?authSource=admin';
+};
 
 /**
  * Connect to MongoDB and initialize the database connection
@@ -11,6 +20,7 @@ const url = 'mongodb://admin:password@mongo:27017/twinspire?authSource=admin';
  */
 export const initializeDatabaseConnection = async (): Promise<void> => {
   try {
+    const url = getMongoUri();
     logger.info(`Connecting to MongoDB at ${url.replace(/\/\/(.+?)@/, '//****:****@')}`);
 
     await mongoose.connect(url, mongooseConfig);
