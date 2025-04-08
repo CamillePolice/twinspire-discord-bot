@@ -1,0 +1,93 @@
+// For format details, see https://aka.ms/devcontainer.json
+{
+    "name": "TypeScript Discord Bot",
+    "build": {
+        "context": "..",
+        "dockerfile": "Dockerfile"
+    },
+    "remoteUser": "node",
+    "features": {
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    },
+    "containerEnv": {
+        "REMOTE_CONTAINERS": "true"
+    },
+    "forwardPorts": [
+        3000,
+        27017,
+        8081
+    ],
+    "portsAttributes": {
+        "3000": {
+            "label": "Discord Bot API",
+            "onAutoForward": "notify"
+        },
+        "27017": {
+            "label": "MongoDB",
+            "onAutoForward": "notify"
+        },
+        "8081": {
+            "label": "MongoDB Express",
+            "onAutoForward": "notify"
+        }
+    },
+    "runArgs": [
+        "-e",
+        "TZ=Europe/Paris",
+        "--mount",
+        "type=volume,source=bash_history_volume,target=/commandhistory",
+        "--mount",
+        "type=bind,source=${localEnv:HOME}/.bash_history,target=/commandhistory/.bash_history_host",
+        "-e",
+        "HISTFILE=/commandhistory/.bash_history",
+        "--mount",
+        "type=bind,source=${localEnv:HOME}/.ssh,target=/home/node/.sshhost/"
+    ],
+    "postStartCommand": "mkdir -p /home/node/.ssh && cp -r /home/node/.sshhost/* /home/node/.ssh/ && chmod -R 600 /home/node/.ssh/*",
+    "postCreateCommand": "echo /commandhistory/.bash_history_host >> /commandhistory/.bash_history && ./scripts/post_create.sh",
+    "customizations": {
+        "vscode": {
+            "workspace": {
+                "filepath": "/.devcontainer/.code-workspace"
+            },
+            "extensions": [
+                "aaron-bond.better-comments",
+                "alefragnani.Bookmarks",
+                "formulahendry.auto-rename-tag",
+                "formulahendry.auto-close-tag",
+                "icrawl.discord-vscode",
+                "softwaredotcom.swdc-vscode",
+                "mikestead.dotenv",
+                "IBM.output-colorizer",
+                "wayou.vscode-todo-highlight",
+                "BracketPairColorDLW.bracket-pair-color-dlw",
+                "mgmcdermott.vscode-language-babel",
+                "naumovs.color-highlight",
+                "ms-azuretools.vscode-docker",
+                "IronGeek.vscode-env",
+                "dbaeumer.vscode-eslint",
+                "GitHub.copilot",
+                "GitHub.copilot-chat",
+                "codezombiech.gitignore",
+                "GitLab.gitlab-workflow",
+                "eamodio.gitlens",
+                "wix.vscode-import-cost",
+                "oderwat.indent-rainbow",
+                "esbenp.prettier-vscode",
+                "tal7aouy.rainbow-bracket",
+                "rangav.vscode-thunder-client",
+                "Gruntfuggly.todo-tree",
+                "ChakrounAnas.turbo-console-log",
+                "redhat.vscode-yaml",
+                "christian-kohler.npm-intellisense",
+                "christian-kohler.path-intellisense",
+                "waderyan.gitblame",
+                "mhutchie.git-graph",
+                "orta.vscode-yarn",
+                "orta.vscode-jest",
+                "firsttris.vscode-jest-runner",
+                "github.vscode-github-actions"
+            ]
+        }
+    }
+}

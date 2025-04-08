@@ -1,0 +1,43 @@
+# Git
+.git
+.gitignore
+
+# Docker
+.dockerignore
+docker-compose*.yml
+Dockerfile*
+
+# Node.js
+node_modules
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Build artifacts
+dist
+build
+coverage
+
+# Database files (these will be mounted)
+database/data
+database/config
+
+# Logs
+logs
+*.log
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# IDE files
+.idea
+.vscode
+*.swp
+*.swo
+.DS_Store
+
+# Other
+README.md
+LICENSE
