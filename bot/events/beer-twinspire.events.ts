@@ -13,9 +13,9 @@ export async function messageCreate(message: Message): Promise<void> {
   if (message.author.bot) return;
 
   try {
-    const biereVariations = ['bière', 'bieres', 'biere', 'bières'];
+    const biereVariations = ['bière', 'bieres', 'biere', 'bières', 'beer', 'beers'];
     const twinspireVariations = ['twinspire'];
-    const images = ['./images/supporter_1.png', './images/supporter_2.png'];
+    const images = ['../assets/supporter_1.png', '../assets/supporter_2.png'];
     const messageLower = message.content.toLowerCase();
 
     if (biereVariations.some(variant => messageLower.includes(variant))) {
