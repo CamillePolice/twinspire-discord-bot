@@ -1,17 +1,17 @@
 import { CacheType, CommandInteraction, SlashCommandBuilder, CommandInteractionOptionResolver } from 'discord.js';
 import { randomInt } from 'crypto';
 
-export default {
+export const buildRollCommand: CommandBuilder<CommandInteraction> = {
   data: new SlashCommandBuilder()
-    .setName('roll')
-    .setDescription('Génère un nombre aléatoire entre 0 et le nombre donné.')
-    .addIntegerOption(option => 
-        option.setName('max')
-            .setDescription('Le nombre maximum du tirage')
-            .setRequired(true)
-    ),
+  .setName('roll')
+  .setDescription('Génère un nombre aléatoire entre 0 et le nombre donné.')
+  .addIntegerOption(option => 
+      option.setName('max')
+          .setDescription('Le nombre maximum du tirage')
+          .setRequired(true)
+  ),
 
-  async execute(interaction: CommandInteraction<CacheType>) {
+  execute: async (interaction: CommandInteraction<CacheType>) => {
     const options = interaction.options as CommandInteractionOptionResolver;
     const max = options.getInteger('max', true);
     
