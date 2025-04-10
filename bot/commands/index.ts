@@ -19,7 +19,12 @@ export const commands = new Collection<string, Command>();
 const findCommandFiles = (dir: string): string[] => {
   const commandFiles: string[] = [];
   const files = fs.readdirSync(dir);
-
+  
+  // Determine if we're in production or development
+  const isProduction = process.env.NODE_ENV === 'production';
+  // File extension to look for (.ts in dev, .js in prod)
+  const fileExtension = isProduction ? '.builders.js' : '.builders.ts';
+  
   for (const file of files) {
     const filePath = path.join(dir, file);
     const stat = fs.statSync(filePath);
@@ -28,12 +33,12 @@ const findCommandFiles = (dir: string): string[] => {
       // Recursively search subdirectories
       commandFiles.push(...findCommandFiles(filePath));
     } else {
-      // Filter for .builders.ts files only
+      // Filter for .builders files with proper extension
       if (
-        file.endsWith('.builders.ts') &&
-        !file.endsWith('index.builders.ts') &&
-        !file.endsWith('.test.builders.ts') &&
-        !file.endsWith('.spec.builders.ts')
+        file.endsWith(fileExtension) &&
+        !file.endsWith(`index${fileExtension}`) &&
+        !file.endsWith(`test${fileExtension}`) &&
+        !file.endsWith(`spec${fileExtension}`)
       ) {
         commandFiles.push(filePath);
       }

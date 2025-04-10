@@ -11,6 +11,7 @@ import {
   handleAdminUpdateTeamMember,
   handleAdminRemoveTeamMember,
   handleAdminAddTeamMember,
+  handleListByStatus,
 } from '../commands/admin.commands';
 
 type AdminSubcommand =
@@ -22,7 +23,8 @@ type AdminSubcommand =
   | 'create_team'
   | 'update_team_member'
   | 'remove_team_member'
-  | 'add_team_member';
+  | 'add_team_member'
+  | 'list_challenges';
 
 const handlers: Record<
   AdminSubcommand,
@@ -37,6 +39,7 @@ const handlers: Record<
   update_team_member: handleAdminUpdateTeamMember,
   remove_team_member: handleAdminRemoveTeamMember,
   add_team_member: handleAdminAddTeamMember,
+  list_challenges: handleListByStatus,
 };
 
 export const handleAdminCommand: TournamentCommandHandler = {

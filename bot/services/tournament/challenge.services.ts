@@ -15,7 +15,7 @@ import { validateTournament } from '../../helpers/challenger.helpers';
 import { validateTeams } from '../../helpers/challenger.helpers';
 import { ChallengeResult } from '../../types/challenge-result.types';
 import { Team } from '../../database/models';
-import { startSession } from 'mongoose';
+import { Schema } from 'mongoose';
 
 /**
  * Service class for managing team challenges within tournaments
@@ -212,24 +212,24 @@ export class ChallengeService {
    */
   async submitChallengeResult(
     challengeId: string,
-    winnerTeamId: string,
+    winnerTeamId: string | Schema.Types.ObjectId,
     score: string,
     games: { winner: string; loser: string; duration?: number }[],
   ): Promise<boolean> {
-    // Start a session for transaction
-    const session = await startSession();
-    session.startTransaction();
-
     try {
+      // Ensure winnerTeamId is a string, not an ObjectId
+      const winnerTeamIdString = typeof winnerTeamId === 'string' 
+        ? winnerTeamId 
+        : winnerTeamId.toString();
+        
       // Create a properly typed result object
-      const result: ChallengeResult = { winner: winnerTeamId, score, games };
+      const result: ChallengeResult = { winner: winnerTeamIdString, score, games };
 
       // Get challenge data
       const challenge = await this.getChallengeById(challengeId);
 
       if (!challenge) {
         logger.error(`Challenge ${challengeId} not found`);
-        await session.abortTransaction();
         return false;
       }
 
@@ -240,7 +240,6 @@ export class ChallengeService {
 
       if (!challengerTeam || !defendingTeam) {
         logger.error(`Could not find teams for challenge ${challengeId}`);
-        await session.abortTransaction();
         return false;
       }
 
@@ -251,7 +250,6 @@ export class ChallengeService {
       ]);
 
       if (!tournament || !teamValidation) {
-        await session.abortTransaction();
         return false;
       }
 
@@ -260,7 +258,7 @@ export class ChallengeService {
       // Process the challenge result
       const { tierAfter, challengerStats, defenderStats } = calculateChallengeOutcome(
         challenge,
-        winnerTeamId,
+        winnerTeamIdString,
         challengerTeamTournament,
         defendingTeamTournament,
         tournament,
@@ -280,37 +278,27 @@ export class ChallengeService {
             },
             updatedAt: new Date(),
           },
-        },
-        { session },
+        }
       );
 
       if (resultUpdate.modifiedCount === 0) {
         logger.error(`Failed to update challenge ${challengeId} with result`);
-        await session.abortTransaction();
         return false;
       }
 
-      // Update team stats within the transaction
+      // Update team stats
       await Promise.all([
-        updateTeamAfterChallenge(challengerTeamTournament, challengerStats, session),
-        updateTeamAfterChallenge(defendingTeamTournament, defenderStats, session),
+        updateTeamAfterChallenge(challengerTeamTournament, challengerStats),
+        updateTeamAfterChallenge(defendingTeamTournament, defenderStats),
       ]);
 
-      // Commit the transaction
-      await session.commitTransaction();
-
       logger.info(
-        `Processed result for challenge ${challengeId}: ${winnerTeamId} won with score ${score}`,
+        `Processed result for challenge ${challengeId}: ${winnerTeamIdString} won with score ${score}`,
       );
       return true;
     } catch (error) {
-      // Abort the transaction on error
-      await session.abortTransaction();
       logger.error(`Error submitting result for challenge ${challengeId}:`, error);
       throw error;
-    } finally {
-      // End the session
-      session.endSession();
     }
   }
 
@@ -452,6 +440,24 @@ export class ChallengeService {
       return result.modifiedCount > 0;
     } catch (error) {
       logger.error(`Error cancelling challenge ${challengeId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gets all challenges with a specific status
+   *
+   * @param status - The status to filter challenges by
+   * @returns Array of challenge objects with the specified status
+   */
+  async getChallengesByStatus(status: ChallengeStatus): Promise<IChallenge[]> {
+    try {
+      return await Challenge.find({ status })
+        .populate('challengerTeamTournament')
+        .populate('defendingTeamTournament')
+        .sort({ createdAt: -1 }); // Sort by newest first
+    } catch (error) {
+      logger.error(`Error fetching challenges with status ${status}:`, error);
       throw error;
     }
   }
