@@ -6,6 +6,7 @@ import {
 import { TournamentCommandBuilder, SubcommandBuilder } from '../../types';
 import { handleAdminCommand } from '../../handlers/admin.handlers';
 import { Role } from '../../../database/enums/role.enums';
+import { ChallengeStatus } from '../../../database/enums/challenge.enums';
 
 const buildViewSubcommand: SubcommandBuilder = {
   build: (subcommand: SlashCommandSubcommandBuilder) =>
@@ -220,6 +221,26 @@ const buildAddTeamMemberSubcommand: SubcommandBuilder = {
       ),
 };
 
+const buildListByStatusSubcommand: SubcommandBuilder = {
+  build: (subcommand: SlashCommandSubcommandBuilder) =>
+    subcommand
+      .setName('list_challenges')
+      .setDescription('List all challenges with a specific status')
+      .addStringOption(option =>
+        option
+          .setName('status')
+          .setDescription('Challenge status to filter by')
+          .setRequired(true)
+          .addChoices(
+            { name: 'Pending', value: ChallengeStatus.PENDING },
+            { name: 'Scheduled', value: ChallengeStatus.SCHEDULED },
+            { name: 'Completed', value: ChallengeStatus.COMPLETED },
+            { name: 'Cancelled', value: ChallengeStatus.CANCELLED },
+            { name: 'Forfeited', value: ChallengeStatus.FORFEITED },
+          ),
+      ),
+};
+
 export const buildAdminChallengeCommand: TournamentCommandBuilder = {
   data: new SlashCommandBuilder()
     .setName('admin-challenge')
@@ -233,6 +254,7 @@ export const buildAdminChallengeCommand: TournamentCommandBuilder = {
     .addSubcommand(buildCreateTeamSubcommand.build)
     .addSubcommand(buildUpdateTeamMemberSubcommand.build)
     .addSubcommand(buildRemoveTeamMemberSubcommand.build)
-    .addSubcommand(buildAddTeamMemberSubcommand.build) as SlashCommandBuilder,
+    .addSubcommand(buildAddTeamMemberSubcommand.build)
+    .addSubcommand(buildListByStatusSubcommand.build) as SlashCommandBuilder,
   execute: handleAdminCommand.execute,
 };
