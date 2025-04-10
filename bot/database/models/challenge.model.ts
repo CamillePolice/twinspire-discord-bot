@@ -35,9 +35,11 @@ const challengeSchema: Schema = new Schema(
     result: {
       winner: {
         type: String,
+        required: true,
       },
       score: {
         type: String,
+        required: true,
       },
       games: [
         {
