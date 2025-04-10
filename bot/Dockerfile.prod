@@ -1,0 +1,44 @@
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY tsconfig.json ./
+
+# Install all dependencies (including dev dependencies for build)
+RUN npm ci
+
+# Copy application files
+COPY . .
+
+# Build the application
+RUN npm run build
+
+# Production stage
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install only production dependencies
+RUN npm ci --only=production
+
+# Copy built files from builder stage
+COPY --from=builder /app/dist ./dist
+# Copy assets directory
+COPY --from=builder /app/assets ./dist/assets
+
+# Create logs directory with proper permissions
+RUN mkdir -p /app/logs && \
+    chown -R node:node /app && \
+    chmod -R 755 /app/logs
+
+ENV NODE_ENV=production
+
+# Use non-root user for security
+USER node
+
+CMD ["npm", "start"]

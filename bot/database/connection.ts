@@ -5,10 +5,10 @@ import { mongooseConfig } from './config';
 // Get MongoDB URI from environment variables with fallback
 const getMongoUri = (): string => {
   if (process.env.NODE_ENV === 'production') {
-    const username = process.env.MONGO_ROOT_USERNAME || 'admin';
-    const password = process.env.MONGO_ROOT_PASSWORD || 'password';
-    const host = process.env.MONGO_HOST || 'mongodb';
-    const database = process.env.MONGO_DATABASE || 'twinspire';
+    const username = process.env.MONGODB_USER || 'admin';
+    const password = process.env.MONGODB_PASSWORD || 'password';
+    const host = process.env.MONGODB_HOST || 'mongo';
+    const database = process.env.MONGODB_DATABASE || 'twinspire';
     return `mongodb://${username}:${password}@${host}:27017/${database}?authSource=admin`;
   }
   return 'mongodb://admin:password@mongo:27017/twinspire?authSource=admin';
@@ -21,7 +21,7 @@ const getMongoUri = (): string => {
 export const initializeDatabaseConnection = async (): Promise<void> => {
   try {
     const url = getMongoUri();
-    logger.info(`Connecting to MongoDB at ${url.replace(/\/\/(.+?)@/, '//****:****@')}`);
+    logger.info(`Connecting to MongoDB at ${url}`);
 
     await mongoose.connect(url, mongooseConfig);
 

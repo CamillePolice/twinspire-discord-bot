@@ -3,38 +3,22 @@ version: '3.8'
 services:
   bot:
     build:
-      context: .
+      context: ./bot
       dockerfile: Dockerfile.prod
     container_name: discord-bot-prod
     restart: unless-stopped
-    env_file:
-      - bot/.env.prod
-    depends_on:
-      - mongodb
-    networks:
-      - bot-network
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  mongodb:
-    image: mongo:latest
-    container_name: mongodb-prod
-    restart: unless-stopped
-    volumes:
-      - mongodb_data:/data/db
     networks:
       - bot-network
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
+      - NODE_ENV=${NODE_ENV:-production}
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - APPLICATION_ID=${APPLICATION_ID}
+      - GUILD_ID=${GUILD_ID}
+      - MONGODB_URI=mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongo:27017/twinspire?authSource=admin
+      - MONGODB_USER=${MONGODB_USER}
+      - MONGODB_PASSWORD=${MONGODB_PASSWORD}
+      - DEBUG=true
+      - PREFIX=${PREFIX:-!}
     deploy:
       resources:
         limits:
@@ -45,9 +29,49 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    volumes:
+      - bot_logs:/app/logs
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  mongo:
+    image: mongo:latest
+    container_name: twinspire-mongodb-prod
+    restart: unless-stopped
+    volumes:
+      - mongodb_data:/data/db
+      - ./database/config:/data/configdb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME:-admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:-password}
+      - MONGO_INITDB_DATABASE=twinspire
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+    networks:
+      - bot-network
+    command: ["mongod", "--bind_ip_all", "--wiredTigerCacheSizeGB", "1.5"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
 
 volumes:
   mongodb_data:
+    driver: local
+  bot_logs:
     driver: local
 
 networks:
@@ -56,4 +80,4 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 172.20.0.0/16 
+        - subnet: 192.168.1.0/24

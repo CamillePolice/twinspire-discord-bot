@@ -4,7 +4,12 @@ import path from 'path';
 // Ensure logs directory exists
 const logsDir = path.join(__dirname, '../../logs');
 if (!fs.existsSync(logsDir)) {
-  fs.mkdirSync(logsDir, { recursive: true });
+  try {
+    fs.mkdirSync(logsDir, { recursive: true });
+  } catch (error) {
+    console.error('Failed to create logs directory:', error);
+    process.exit(1); // Exit if logs directory cannot be created
+  }
 }
 
 // Create log file streams
