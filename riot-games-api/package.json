@@ -1,0 +1,21 @@
+{
+    "name": "riot-api-test",
+    "version": "1.0.0",
+    "description": "Test connection to Riot Games API",
+    "main": "dist/riot-api-test.js",
+    "scripts": {
+      "build": "tsc",
+      "start": "node dist/riot-api-test.js",
+      "test": "npm run build && npm start",
+      "dev": "ts-node riot-api-test.ts"
+    },
+    "dependencies": {
+      "axios": "^1.6.7",
+      "dotenv": "^16.4.1"
+    },
+    "devDependencies": {
+      "@types/node": "^20.11.16",
+      "ts-node": "^10.9.2",
+      "typescript": "^5.3.3"
+    }
+  }
