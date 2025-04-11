@@ -1,0 +1,13 @@
+export const RANK_PRIORITY = [
+  'CHALLENGER',
+  'GRANDMASTER',
+  'MASTER',
+  'DIAMOND',
+  'EMERALD',
+  'PLATINUM',
+  'GOLD',
+  'SILVER',
+  'BRONZE',
+  'IRON',
+  'UNRANKED',
+];

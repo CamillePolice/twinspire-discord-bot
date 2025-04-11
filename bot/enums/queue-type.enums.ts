@@ -1,0 +1,16 @@
+export const QueueType = {
+  400: 'Normal Draft',
+  420: 'Ranked Solo/Duo',
+  430: 'Normal Blind',
+  440: 'Ranked Flex',
+  450: 'ARAM',
+  700: 'Clash',
+  900: 'URF',
+  1020: 'One for All',
+  1300: 'Nexus Blitz',
+  1400: 'Ultimate Spellbook',
+  1900: 'URF',
+  2000: 'Tutorial',
+  2010: 'Tutorial',
+  2020: 'Tutorial',
+};
