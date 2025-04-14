@@ -34,19 +34,27 @@ export const checkExistingChallenges = async (
 };
 
 /**
- * Validate the tier difference requirement (challenger must be exactly one tier below defender)
+ * Validate the tier difference requirement (challenger must be in the same tier OR exactly one tier below defender)
  */
 export const validateTierDifference = (
   challengerTeamTournament: ITeamTournament,
   defendingTeamTournament: ITeamTournament,
 ): boolean => {
-  if (challengerTeamTournament.tier !== defendingTeamTournament.tier + 1) {
-    logger.error(
-      `Cannot challenge: Tiers are not adjacent. Challenger: ${challengerTeamTournament.tier}, Defending: ${defendingTeamTournament.tier}`,
-    );
-    return false;
+  // Valid cases:
+  // 1. Same tier (e.g., tier 3 vs tier 3)
+  // 2. Challenger is exactly one tier below (e.g., tier 4 vs tier 3)
+  if (
+    challengerTeamTournament.tier === defendingTeamTournament.tier ||
+    challengerTeamTournament.tier === defendingTeamTournament.tier + 1
+  ) {
+    return true;
   }
-  return true;
+
+  // If we reach here, the tiers are not valid for a challenge
+  logger.error(
+    `Cannot challenge: Invalid tier difference. Challenger: ${challengerTeamTournament.tier}, Defending: ${defendingTeamTournament.tier}. Teams must be in the same tier or challenger must be exactly one tier below.`,
+  );
+  return false;
 };
 
 /**
