@@ -12,6 +12,7 @@ import { handleAdminUpdateTeamMember } from './commands/admin/admin-update-team.
 import { handleAdminRemoveTeamMember } from './commands/admin/admin-remove-team-member.command';
 import { handleAdminAddTeamMember } from './commands/admin/admin-add-team-member.command';
 import { handleListByStatus } from './commands/admin/list-by-status.command';
+import { handleAdminUpdateTeamInfo } from './commands/admin/admin-update-team-info.command';
 
 export {
   handleChallenge,
@@ -28,4 +29,5 @@ export {
   handleAdminRemoveTeamMember,
   handleAdminAddTeamMember,
   handleListByStatus,
+  handleAdminUpdateTeamInfo,
 };

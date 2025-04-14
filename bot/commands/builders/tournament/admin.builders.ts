@@ -244,6 +244,29 @@ const buildListByStatusSubcommand: SubcommandBuilder = {
       ),
 };
 
+const buildUpdateTeamInfoSubcommand: SubcommandBuilder = {
+  build: (subcommand: SlashCommandSubcommandBuilder) =>
+    subcommand
+      .setName('update_team_info')
+      .setDescription('Update team information  (admin only)')
+      .addStringOption(option =>
+        option
+          .setName('team_name')
+          .setDescription('The name of the team to update')
+          .setRequired(true)
+          .setAutocomplete(true),
+      )
+      .addStringOption(option =>
+        option.setName('new_name').setDescription('The new name for the team').setRequired(false),
+      )
+      .addStringOption(option =>
+        option
+          .setName('discord_role')
+          .setDescription('The Discord role for the team (mention or name)')
+          .setRequired(false),
+      ),
+};
+
 export const buildAdminChallengeCommand: TournamentCommandBuilder = {
   data: new SlashCommandBuilder()
     .setName('admin-challenge')
@@ -258,6 +281,7 @@ export const buildAdminChallengeCommand: TournamentCommandBuilder = {
     .addSubcommand(buildUpdateTeamMemberSubcommand.build)
     .addSubcommand(buildRemoveTeamMemberSubcommand.build)
     .addSubcommand(buildAddTeamMemberSubcommand.build)
-    .addSubcommand(buildListByStatusSubcommand.build) as SlashCommandBuilder,
+    .addSubcommand(buildListByStatusSubcommand.build)
+    .addSubcommand(buildUpdateTeamInfoSubcommand.build) as SlashCommandBuilder,
   execute: handleAdminCommand.execute,
 };
