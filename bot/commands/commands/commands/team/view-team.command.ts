@@ -92,6 +92,15 @@ export async function handleViewTeam(interaction: ChatInputCommandInteraction): 
       });
     }
 
+    // Add Discord role if it exists
+    if (teamData.discordRole) {
+      embed.addFields({
+        name: 'Discord Role',
+        value: teamData.discordRole,
+        inline: true,
+      });
+    }
+
     // Create a more efficient formatter for members
     const membersList = formatMembersList(teamData.members);
     embed.addFields({ name: 'Members', value: membersList, inline: false });

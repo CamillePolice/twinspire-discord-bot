@@ -1,7 +1,7 @@
 import { ObjectId } from 'mongodb';
 import { Schema, model, Model } from 'mongoose';
-import { ITeamTournament } from './team-tournament.model';
 import { Role } from '../enums/role.enums';
+import { ITeamTournament } from './team-tournament.model';
 
 // Creating a schema for team member
 const teamMemberSchema = new Schema(
@@ -36,6 +36,10 @@ const teamMemberSchema = new Schema(
       type: String,
       default: '',
     },
+    discordRole: {
+      type: String,
+      default: '',
+    },
   },
   {
     timestamps: true,
@@ -67,6 +71,10 @@ const teamSchema: Schema = new Schema(
         ref: 'TeamTournament',
       },
     ],
+    discordRole: {
+      type: String,
+      default: '',
+    },
   },
   {
     timestamps: true,
@@ -85,13 +93,15 @@ export interface ITeamMember {
 
 // Interface for the document
 export interface ITeam {
+  _id?: Schema.Types.ObjectId;
   teamId: string; // ID used by users to identify the team
   name: string;
   captainId: string; // Discord ID of the team captain
   members: ITeamMember[];
-  tournaments: ITeamTournament[];
-  createdAt: Date;
-  updatedAt: Date;
+  tournaments?: ITeamTournament[];
+  discordRole?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export type ITeamModel = Model<ITeam>;

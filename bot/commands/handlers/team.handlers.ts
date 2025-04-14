@@ -8,6 +8,7 @@ import {
   handleRemoveMember,
   handleUpdateMember,
   handleTransferCaptain,
+  handleUpdateTeam,
 } from '../commands/team.commands';
 
 import {
@@ -24,6 +25,7 @@ type TeamSubcommand =
   | 'remove_member'
   | 'update_member'
   | 'transfer_captain'
+  | 'update'
   | 'challenge'
   | 'propose_dates'
   | 'schedule'
@@ -39,6 +41,7 @@ const handlers: Record<
   remove_member: handleRemoveMember,
   update_member: handleUpdateMember,
   transfer_captain: handleTransferCaptain,
+  update: handleUpdateTeam,
   challenge: handleChallenge,
   propose_dates: handleProposeDates,
   schedule: handleScheduleChallenge,

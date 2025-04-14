@@ -4,6 +4,7 @@ import { handleAddMember } from './commands/team/add-member.command';
 import { handleRemoveMember } from './commands/team/remove-member.command';
 import { handleUpdateMember } from './commands/team/update-member.command';
 import { handleTransferCaptain } from './commands/team/transfer-captain.command';
+import { handleUpdateTeam } from './commands/team/update-team.command';
 
 export {
   handleCreateTeam,
@@ -12,4 +13,5 @@ export {
   handleRemoveMember,
   handleUpdateMember,
   handleTransferCaptain,
+  handleUpdateTeam,
 };

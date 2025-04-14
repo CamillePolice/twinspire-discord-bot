@@ -20,9 +20,23 @@ export async function handleCreateTournament(
     const endDateStr = interaction.options.getString('end_date', true);
     const description = interaction.options.getString('description') || undefined;
 
+    // Parse dates and ensure they maintain their original time regardless of timezone
+    const parseDateWithOriginalTime = (dateString: string): Date => {
+      // Parse the date string to extract components
+      const [datePart, timePart] = dateString.split(' ');
+      const [year, month, day] = datePart.split('-').map(Number);
+      const [hours, minutes] = timePart ? timePart.split(':').map(Number) : [0, 0];
+      
+      // Create a date object with the exact components in the local timezone
+      // Note: month is 0-indexed in JavaScript Date
+      const date = new Date(year, month - 1, day, hours, minutes);
+      
+      return date;
+    };
+    
     // Parse dates
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
+    const startDate = parseDateWithOriginalTime(startDateStr);
+    const endDate = parseDateWithOriginalTime(endDateStr);
 
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
       await interaction.editReply('Invalid date format. Please use YYYY-MM-DD.');

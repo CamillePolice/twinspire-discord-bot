@@ -9,7 +9,7 @@ import {
 } from '../../../../helpers/message.helpers';
 import { ChallengeStatus } from '../../../../database/enums/challenge.enums';
 import { TeamTournament } from '../../../../database/models';
-import { ITeamMember, ITeam } from '../../../../database/models/team.model';
+import { ITeam } from '../../../../database/models/team.model';
 
 const challengeService = new ChallengeService();
 
@@ -41,18 +41,21 @@ export async function handleScheduleChallenge(
         challenge.challengerTeamTournament,
       ).populate({
         path: 'team',
-        select: 'name',
+        select: 'name discordRole',
       });
 
       const defendingTeamTournament = await TeamTournament.findById(
         challenge.defendingTeamTournament,
       ).populate({
         path: 'team',
-        select: 'name',
+        select: 'name discordRole',
       });
 
-      const challengerTeamName = challengerTeamTournament?.team?.name || 'Unknown Team';
-      const defendingTeamName = defendingTeamTournament?.team?.name || 'Unknown Team';
+      // Access the team object correctly with proper type casting
+      const challengerTeamRole =
+        (challengerTeamTournament?.team as any)?.discordRole || 'Unknown Role';
+      const defendingTeamRole =
+        (defendingTeamTournament?.team as any)?.discordRole || 'Unknown Role';
       const scheduledDate = challenge.scheduledDate
         ? formatTimestamp(challenge.scheduledDate, 'F')
         : 'Unknown Date';
@@ -60,7 +63,7 @@ export async function handleScheduleChallenge(
       const embed = createErrorEmbed(
         'Challenge Already Scheduled',
         `This challenge is already scheduled for ${scheduledDate}.`,
-        `Challenge between ${challengerTeamName} and ${defendingTeamName} cannot be rescheduled.`,
+        `Challenge between ${challengerTeamRole} and ${defendingTeamRole} cannot be rescheduled.`,
       );
       await interaction.editReply({ embeds: [embed] });
       return;
@@ -124,25 +127,6 @@ export async function handleScheduleChallenge(
         return;
       }
 
-      // Get captains from both teams
-      const challengerCaptain = challengerTeam.team.members.find(
-        (member: ITeamMember) => member.isCaptain,
-      );
-      const defendingCaptain = defendingTeam.team.members.find(
-        (member: ITeamMember) => member.isCaptain,
-      );
-
-      if (!challengerCaptain || !defendingCaptain) {
-        logger.error(`Could not find captains for challenge ${challengeId}`);
-        return;
-      }
-
-      // Fetch Discord users for both captains
-      const challengerCaptainUser = await interaction.client.users.fetch(
-        challengerCaptain.discordId,
-      );
-      const defendingCaptainUser = await interaction.client.users.fetch(defendingCaptain.discordId);
-
       // Create notification embed
       const notificationEmbed = createChallengeEmbed(
         challengeId,
@@ -164,11 +148,43 @@ export async function handleScheduleChallenge(
         },
       );
 
-      // Send DM to both captains
-      await challengerCaptainUser.send({ embeds: [notificationEmbed] });
-      await defendingCaptainUser.send({ embeds: [notificationEmbed] });
+      // Send DM to all team members
+      const challengerTeamMembers = challengerTeam.team.members;
+      const defendingTeamMembers = defendingTeam.team.members;
 
-      logger.info(`Sent schedule notifications to captains for challenge ${challengeId}`);
+      // Send notifications to all challenger team members
+      for (const member of challengerTeamMembers) {
+        try {
+          const user = await interaction.client.users.fetch(member.discordId);
+          await user.send({ embeds: [notificationEmbed] });
+          logger.info(
+            `Sent schedule notification to challenger team member ${member.discordId} for challenge ${challengeId}`,
+          );
+        } catch (error) {
+          logger.error(
+            `Failed to send notification to challenger team member ${member.discordId}:`,
+            error as Error,
+          );
+        }
+      }
+
+      // Send notifications to all defending team members
+      for (const member of defendingTeamMembers) {
+        try {
+          const user = await interaction.client.users.fetch(member.discordId);
+          await user.send({ embeds: [notificationEmbed] });
+          logger.info(
+            `Sent schedule notification to defending team member ${member.discordId} for challenge ${challengeId}`,
+          );
+        } catch (error) {
+          logger.error(
+            `Failed to send notification to defending team member ${member.discordId}:`,
+            error as Error,
+          );
+        }
+      }
+
+      logger.info(`Sent schedule notifications to all team members for challenge ${challengeId}`);
 
       // Send confirmation to the "défis" channel
       try {
@@ -180,7 +196,7 @@ export async function handleScheduleChallenge(
         }
 
         const defisChannel = guild.channels.cache.find(
-          channel => channel.name.toLowerCase() === 'défis' && channel instanceof TextChannel,
+          channel => channel.name.toLowerCase() === '🆚│défis' && channel instanceof TextChannel,
         ) as TextChannel | undefined;
 
         if (!defisChannel) {
@@ -202,7 +218,7 @@ export async function handleScheduleChallenge(
         ).addFields(
           {
             name: 'Teams',
-            value: `${challengerTeam.team.name} vs ${defendingTeam.team.name}`,
+            value: `${(challengerTeam.team as ITeam).discordRole || challengerTeam.team.name} vs ${(defendingTeam.team as any).discordRole || defendingTeam.team.name}`,
           },
           {
             name: 'Scheduled Date',

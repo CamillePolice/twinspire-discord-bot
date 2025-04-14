@@ -144,6 +144,7 @@ export const getRoleIcon = (role: Role): string => {
     [Role.FILL]: '🔄',
     [Role.COACH]: '📊',
     [Role.LITTLE_LEGEND]: '🌟',
+    [Role.MANAGER]: '👥',
   };
   return roleIcons[role] || '❓';
 };

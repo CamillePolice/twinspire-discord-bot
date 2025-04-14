@@ -438,4 +438,37 @@ export class TeamService {
       throw error;
     }
   }
+
+  /**
+   * Updates a team's information
+   * 
+   * @param teamId - The ID of the team to update
+   * @param updateData - The data to update
+   * @returns A boolean indicating if the update was successful
+   */
+  async updateTeam(teamId: string, updateData: Partial<ITeam>): Promise<boolean> {
+    try {
+      const result = await Team.findOneAndUpdate(
+        { teamId },
+        { 
+          $set: {
+            ...updateData,
+            updatedAt: new Date()
+          }
+        },
+        { new: true }
+      );
+
+      if (!result) {
+        logger.error(`Team ${teamId} not found for update`);
+        return false;
+      }
+
+      logger.info(`Updated team ${teamId} with data: ${JSON.stringify(updateData)}`);
+      return true;
+    } catch (error) {
+      logger.error(`Error updating team ${teamId}:`, error);
+      throw error;
+    }
+  }
 }

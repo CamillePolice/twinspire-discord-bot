@@ -6,9 +6,10 @@ import {
   createChallengeEmbed,
   formatTimestamp,
   StatusIcons,
+  parseWithFranceTimezone,
 } from '../../../../helpers/message.helpers';
 import { TeamTournament } from '../../../../database/models';
-import { ITeam, ITeamMember } from '../../../../database/models/team.model';
+import { ITeamMember } from '../../../../database/models/team.model';
 
 const challengeService = new ChallengeService();
 
@@ -40,9 +41,10 @@ export async function handleProposeDates(interaction: ChatInputCommandInteractio
       return;
     }
 
-    const date1 = new Date(interaction.options.getString('date1', true));
-    const date2 = new Date(interaction.options.getString('date2', true));
-    const date3 = new Date(interaction.options.getString('date3', true));
+    // Parse dates with France timezone consideration
+    const date1 = parseWithFranceTimezone(interaction.options.getString('date1', true));
+    const date2 = parseWithFranceTimezone(interaction.options.getString('date2', true));
+    const date3 = parseWithFranceTimezone(interaction.options.getString('date3', true));
 
     // Validate dates
     if (isNaN(date1.getTime()) || isNaN(date2.getTime()) || isNaN(date3.getTime())) {
@@ -80,13 +82,17 @@ export async function handleProposeDates(interaction: ChatInputCommandInteractio
         {
           name: 'Proposed Date Options',
           value: dates
-            .map((date, i) => `Option ${i + 1}: ${formatTimestamp(date, 'F')}`)
+            .map((date, i) => {
+              // Display in Discord timestamp format (will show in user's local timezone)
+              const discordTimestamp = formatTimestamp(date, 'F');
+              return `Option ${i + 1}: ${discordTimestamp}`;
+            })
             .join('\n'),
         },
         {
           name: 'Next Steps',
           value:
-            'The opponent team should select one of these dates using `/team-challenge schedule`.',
+            'The opponent team should select one of these dates using `/team challenge schedule`.',
         },
       );
 
@@ -136,12 +142,16 @@ export async function handleProposeDates(interaction: ChatInputCommandInteractio
           {
             name: 'Proposed Date Options',
             value: dates
-              .map((date, i) => `Option ${i + 1}: ${formatTimestamp(date, 'F')}`)
-              .join('\n'),
+              .map((date, i) => {
+                // Display in Discord timestamp format (will show in user's local timezone)
+                const discordTimestamp = formatTimestamp(date, 'F');
+                return `Option ${i + 1}: ${discordTimestamp}`;
+              })
+              .join('\n\n'),
           },
           {
             name: 'Challenge Details',
-            value: `[Click here to view the challenge message](${challengeMessage.url})\n\nUse \`/team-challenge schedule\` to select one of these dates.`,
+            value: `[Click here to view the challenge message](${challengeMessage.url})\n\nUse \`/team challenge schedule\` to select one of these dates.`,
           },
         );
 

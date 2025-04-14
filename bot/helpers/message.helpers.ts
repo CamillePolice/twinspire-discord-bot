@@ -8,7 +8,7 @@ import {
 } from 'discord.js';
 import { ChallengeStatus } from '../database/enums/challenge.enums';
 import { Role } from '../database/enums/role.enums';
-
+import { logger } from '../utils/logger.utils';
 /**
  * Helper functions for creating consistent, beautiful messages across commands
  */
@@ -92,7 +92,13 @@ export function getChallengeStatusIcon(status: string): string {
  * @returns A formatted timestamp string for Discord
  */
 export function formatTimestamp(date: Date, format: 'R' | 'F' | 'D' | 'T' | 'd' = 'F'): string {
-  return `<t:${Math.floor(date.getTime() / 1000)}:${format}>`;
+  // Get the timezone offset in minutes
+  const timezoneOffset = date.getTimezoneOffset();
+
+  // Adjust the timestamp by adding the timezone offset to compensate for Discord's conversion
+  const adjustedTimestamp = Math.floor((date.getTime() + timezoneOffset * 60000) / 1000);
+
+  return `<t:${adjustedTimestamp}:${format}>`;
 }
 
 /**
@@ -335,4 +341,64 @@ export function formatTournamentStats(
   winStreak: number,
 ): string {
   return `Tier: **${tier}** • Prestige: **${prestige}**\nRecord: **${wins}-${losses}** • Win Streak: **${winStreak}**`;
+}
+
+// Helper function to parse date strings from French local time (CET/CEST)
+export function parseWithFranceTimezone(dateString: string): Date {
+  try {
+    // The input dateString is already in French local time (e.g., "2025-04-15 21:00")
+    // We need to parse it as-is, but ensure it's interpreted correctly
+
+    // Split the date and time components
+    const [datePart, timePart] = dateString.split(' ');
+    if (!datePart || !timePart) {
+      logger.error('Invalid date format, expected "YYYY-MM-DD HH:MM"');
+      return new Date(NaN);
+    }
+
+    // Extract year, month, day
+    const [year, month, day] = datePart.split('-').map(num => parseInt(num, 10));
+
+    // Extract hours and minutes
+    const [hours, minutes] = timePart.split(':').map(num => parseInt(num, 10));
+
+    if (isNaN(year) || isNaN(month) || isNaN(day) || isNaN(hours) || isNaN(minutes)) {
+      logger.error('Date contains non-numeric components');
+      return new Date(NaN);
+    }
+
+    // Create a date object in UTC that represents the correct moment
+    // Month is 0-indexed in JavaScript Date
+    const date = new Date(Date.UTC(year, month - 1, day, hours, minutes));
+
+    // Adjust for timezone difference between France and UTC
+    // This is a simplified approach - in a production environment,
+    // you might want to use a library like luxon or date-fns-tz for more robust handling
+    const franceOffset = getParisTimezoneOffset(date);
+    date.setUTCMinutes(date.getUTCMinutes() - franceOffset);
+
+    return date;
+  } catch (error) {
+    logger.error('Error parsing date with France timezone:', error);
+    return new Date(NaN); // Return an invalid date to trigger validation failure
+  }
+}
+
+// Helper function to get Paris timezone offset (in minutes) for a given date
+export function getParisTimezoneOffset(date: Date): number {
+  // Standard Time (CET): UTC+1 = 60 minutes
+  // Summer Time (CEST): UTC+2 = 120 minutes
+
+  // Check if the date is in Daylight Saving Time (DST)
+  // This is a simplified check - DST in Europe typically starts on the last Sunday
+  // of March and ends on the last Sunday of October
+  const month = date.getUTCMonth(); // 0-11 for Jan-Dec
+
+  // Simple DST check (April to October is summer time)
+  // For more accuracy, implement exact European DST rules
+  if (month > 2 && month < 10) {
+    return 120; // CEST: UTC+2
+  } else {
+    return 60; // CET: UTC+1
+  }
 }

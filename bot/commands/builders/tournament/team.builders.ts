@@ -109,6 +109,26 @@ const buildTransferCaptainSubcommand: SubcommandBuilder = {
       ),
 };
 
+const buildUpdateTeamSubcommand: SubcommandBuilder = {
+  build: (subcommand: SlashCommandSubcommandBuilder) =>
+    subcommand
+      .setName('update')
+      .setDescription('Update team information')
+      .addStringOption(option =>
+        option
+          .setName('team_name')
+          .setDescription('Team name to update')
+          .setRequired(true)
+          .setAutocomplete(true),
+      )
+      .addStringOption(option =>
+        option.setName('new_name').setDescription('New team name').setRequired(false),
+      )
+      .addStringOption(option =>
+        option.setName('discord_role').setDescription('Discord role to update').setRequired(false),
+      ),
+};
+
 const buildChallengeSubcommand: SubcommandBuilder = {
   build: (subcommand: SlashCommandSubcommandBuilder) =>
     subcommand
@@ -237,6 +257,7 @@ export const buildTeamCommand: TournamentCommandBuilder = {
     .addSubcommand(buildRemoveMemberSubcommand.build)
     .addSubcommand(buildUpdateMemberSubcommand.build)
     .addSubcommand(buildTransferCaptainSubcommand.build)
+    .addSubcommand(buildUpdateTeamSubcommand.build)
     .addSubcommand(buildChallengeSubcommand.build)
     .addSubcommand(buildProposeDatesSubcommand.build)
     .addSubcommand(buildScheduleChallengeSubcommand.build)
