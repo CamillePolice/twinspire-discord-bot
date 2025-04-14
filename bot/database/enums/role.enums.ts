@@ -7,4 +7,5 @@ export enum Role {
   FILL = 'FILL',
   COACH = 'COACH',
   LITTLE_LEGEND = 'LITTLE LEGEND',
+  MANAGER = 'MANAGER',
 }

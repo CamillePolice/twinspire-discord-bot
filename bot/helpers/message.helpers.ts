@@ -60,6 +60,9 @@ export function getRoleIcon(role: string): string {
     [Role.ADC]: '🏹',
     [Role.SUPPORT]: '🛡️',
     [Role.FILL]: '🔄',
+    [Role.COACH]: '📊',
+    [Role.LITTLE_LEGEND]: '🌟',
+    [Role.MANAGER]: '👥',
   };
 
   return roleIcons[role] || '❓';

@@ -16,7 +16,17 @@ const teamMemberSchema = new Schema(
     },
     role: {
       type: String,
-      enum: [Role.TOP, Role.JUNGLE, Role.MID, Role.ADC, Role.SUPPORT, Role.FILL],
+      enum: [
+        Role.TOP,
+        Role.JUNGLE,
+        Role.MID,
+        Role.ADC,
+        Role.SUPPORT,
+        Role.FILL,
+        Role.COACH,
+        Role.LITTLE_LEGEND,
+        Role.MANAGER,
+      ],
     },
     isCaptain: {
       type: Boolean,
