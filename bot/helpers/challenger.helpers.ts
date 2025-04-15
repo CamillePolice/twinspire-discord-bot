@@ -136,21 +136,29 @@ export const createChallengeRecord = async (
 
 /**
  * Calculate prestige points based on tier difference and winner
+ * @param isChallengerWinner - true if challenger won, false if defender won
+ * @param challengerTier - the tier of the challenger team
+ * @param defenderTier - the tier of the defending team
  */
 export const calculatePrestigePoints = (
   isChallengerWinner: boolean,
-  tierDifference: number,
+  challengerTier: number,
+  defenderTier: number,
 ): { challengerPrestige: number; defendingPrestige: number } => {
   let challengerPrestige = 0;
   let defendingPrestige = 0;
 
+  // Calculate tier differences from each team's perspective
+  const challengerTierDiff = defenderTier - challengerTier; // negative means challenger is higher tier
+  const defenderTierDiff = challengerTier - defenderTier;   // negative means defender is higher tier
+
   if (isChallengerWinner) {
     // Challenger won
-    if (tierDifference > 0) {
+    if (challengerTierDiff > 0) {
       // Won against higher tier
       challengerPrestige = 10;
       defendingPrestige = 3;
-    } else if (tierDifference === 0) {
+    } else if (challengerTierDiff === 0) {
       // Won against same tier
       challengerPrestige = 6;
       defendingPrestige = 2;
@@ -161,18 +169,18 @@ export const calculatePrestigePoints = (
     }
   } else {
     // Defender won
-    if (tierDifference > 0) {
-      // Lost against higher tier
-      challengerPrestige = 3;
+    if (defenderTierDiff > 0) {
+      // Defender won against higher tier
       defendingPrestige = 10;
-    } else if (tierDifference === 0) {
-      // Lost against same tier
-      challengerPrestige = 2;
+      challengerPrestige = 3;
+    } else if (defenderTierDiff === 0) {
+      // Won against same tier
       defendingPrestige = 6;
+      challengerPrestige = 2;
     } else {
-      // Lost against lower tier
-      challengerPrestige = 1;
+      // Won against lower tier
       defendingPrestige = 4;
+      challengerPrestige = 3;
     }
   }
 
@@ -277,13 +285,11 @@ export const calculateChallengeOutcome = (
   const challengerTier = challengerTeamTournament.tier;
   const defenderTier = defendingTeamTournament.tier;
 
-  // Determine tier difference
-  const tierDifference = defenderTier - challengerTier;
-
   // Calculate prestige points based on tier difference and winner
   let { challengerPrestige, defendingPrestige } = calculatePrestigePoints(
     isChallengerWinner,
-    tierDifference,
+    challengerTier,
+    defenderTier,
   );
 
   // Swap tiers if challenger wins
