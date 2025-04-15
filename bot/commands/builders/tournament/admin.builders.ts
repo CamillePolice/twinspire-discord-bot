@@ -159,6 +159,12 @@ const buildCreateTeamSubcommand: SubcommandBuilder = {
           .setName('captain_opgg')
           .setDescription('OP.GG profile URL of the captain')
           .setRequired(false),
+      )
+      .addStringOption(option =>
+        option
+          .setName('discord_role')
+          .setDescription('The Discord role for the team (mention or name)')
+          .setRequired(false),
       ),
 };
 

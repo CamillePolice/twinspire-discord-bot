@@ -26,6 +26,7 @@ export async function handleAdminCreateTeam(
     const captain = interaction.options.getUser('captain', true);
     const captainRole = interaction.options.getString('captain_role', true) as Role;
     const captainOpgg = interaction.options.getString('captain_opgg', false) || '';
+    const discordRole = interaction.options.getString('discord_role');
 
     // Check if team name already exists
     const existingTeam = await Team.findOne({ name });
@@ -37,6 +38,44 @@ export async function handleAdminCreateTeam(
       );
       await interaction.editReply({ embeds: [embed] });
       return;
+    }
+
+    // Verify Discord role exists if provided
+    if (discordRole) {
+      const guild = interaction.guild;
+      if (!guild) {
+        await interaction.editReply({
+          embeds: [
+            createErrorEmbed('Server Required', 'This command can only be used in a server.'),
+          ],
+        });
+        return;
+      }
+
+      // Check if the role is provided as a mention
+      const roleIdMatch = discordRole.match(/<@&(\d+)>/);
+      let roleExists = false;
+
+      if (roleIdMatch && roleIdMatch[1]) {
+        // Role was provided as a mention, check by ID
+        const roleId = roleIdMatch[1];
+        roleExists = guild.roles.cache.has(roleId);
+      } else {
+        // Role was provided as a name, check by name
+        roleExists = guild.roles.cache.some(role => role.name === discordRole);
+      }
+
+      if (!roleExists) {
+        await interaction.editReply({
+          embeds: [
+            createErrorEmbed(
+              'Role Not Found',
+              `Discord role "${discordRole}" not found in this server.`,
+            ),
+          ],
+        });
+        return;
+      }
     }
 
     // Create new team
@@ -53,6 +92,7 @@ export async function handleAdminCreateTeam(
           opgg: captainOpgg,
         },
       ],
+      discordRole: discordRole || '',
     });
 
     await newTeam.save();
@@ -74,6 +114,14 @@ export async function handleAdminCreateTeam(
       embed.addFields({
         name: 'OP.GG',
         value: `[View Profile](${captainOpgg})`,
+        inline: true,
+      });
+    }
+
+    if (discordRole) {
+      embed.addFields({
+        name: 'Discord Role',
+        value: discordRole,
         inline: true,
       });
     }

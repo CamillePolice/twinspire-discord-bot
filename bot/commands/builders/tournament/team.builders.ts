@@ -10,6 +10,12 @@ const buildCreateTeamSubcommand: SubcommandBuilder = {
       .setDescription('Create a new team')
       .addStringOption(option =>
         option.setName('team_name').setDescription('Team name').setRequired(true),
+      )
+      .addStringOption(option =>
+        option
+          .setName('discord_role')
+          .setDescription('The Discord role for the team (mention or name)')
+          .setRequired(false),
       ),
 };
 
