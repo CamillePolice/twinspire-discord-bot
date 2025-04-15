@@ -149,6 +149,12 @@ const buildChallengeSubcommand: SubcommandBuilder = {
       )
       .addStringOption(option =>
         option.setName('tournament_id').setDescription('Tournament ID').setRequired(true),
+      )
+      .addBooleanOption(option =>
+        option
+          .setName('cast_demand')
+          .setDescription('Cast a demand for the challenge')
+          .setRequired(false),
       ),
 };
 
