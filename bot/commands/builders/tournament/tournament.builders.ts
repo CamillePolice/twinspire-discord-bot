@@ -1,8 +1,4 @@
-import {
-  SlashCommandBuilder,
-  SlashCommandSubcommandBuilder,
-  PermissionFlagsBits,
-} from 'discord.js';
+import { SlashCommandBuilder, SlashCommandSubcommandBuilder } from 'discord.js';
 import { TournamentCommandBuilder, SubcommandBuilder } from '../../types';
 import { TournamentFormat } from '../../../database/enums/tournament-format.enums';
 import { GameSupported } from '../../../database/enums/game-supported.enums';
@@ -148,7 +144,6 @@ export const buildTournamentCommand: TournamentCommandBuilder = {
   data: new SlashCommandBuilder()
     .setName('tournament')
     .setDescription('Tournament management commands')
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .addSubcommand(buildCreateSubcommand.build)
     .addSubcommand(buildViewSubcommand.build)
     .addSubcommand(buildListSubcommand.build)
