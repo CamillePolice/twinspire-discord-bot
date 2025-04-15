@@ -244,6 +244,36 @@ const buildSubmitResultSubcommand: SubcommandBuilder = {
             { name: '1-3', value: '1-3' },
             { name: '0-3', value: '0-3' },
           ),
+      )
+      .addAttachmentOption(option =>
+        option
+          .setName('screenshot1')
+          .setDescription('Screenshot of game 1 result')
+          .setRequired(false),
+      )
+      .addAttachmentOption(option =>
+        option
+          .setName('screenshot2')
+          .setDescription('Screenshot of game 2 result')
+          .setRequired(false),
+      )
+      .addAttachmentOption(option =>
+        option
+          .setName('screenshot3')
+          .setDescription('Screenshot of game 3 result')
+          .setRequired(false),
+      )
+      .addAttachmentOption(option =>
+        option
+          .setName('screenshot4')
+          .setDescription('Screenshot of game 4 result')
+          .setRequired(false),
+      )
+      .addAttachmentOption(option =>
+        option
+          .setName('screenshot5')
+          .setDescription('Screenshot of game 5 result')
+          .setRequired(false),
       ),
 };
 

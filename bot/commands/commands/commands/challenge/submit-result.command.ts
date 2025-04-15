@@ -1,4 +1,12 @@
-import { ChatInputCommandInteraction } from 'discord.js';
+import {
+  ChatInputCommandInteraction,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ComponentType,
+  TextChannel,
+} from 'discord.js';
 import { logger } from '../../../../utils/logger.utils';
 import { ChallengeService } from '../../../../services/tournament/challenge.services';
 import {
@@ -18,6 +26,15 @@ export async function handleSubmitResult(interaction: ChatInputCommandInteractio
     const challengeId = interaction.options.getString('challenge_id', true);
     const result = interaction.options.getString('result', true);
     const score = interaction.options.getString('score', true);
+
+    // Get all screenshots
+    const screenshots = [];
+    for (let i = 1; i <= 5; i++) {
+      const screenshot = interaction.options.getAttachment(`screenshot${i}`);
+      if (screenshot) {
+        screenshots.push(screenshot);
+      }
+    }
 
     // Parse the score to determine the number of games
     const [winnerScore, loserScore] = score.split('-').map(Number);
@@ -70,7 +87,7 @@ export async function handleSubmitResult(interaction: ChatInputCommandInteractio
       challengerTeamTournamentId,
     ).populate({
       path: 'team',
-      select: 'name',
+      select: 'name discordRole',
     });
     console.log(
       `LOG || handleSubmitResult || challengerTeamTournament ->`,
@@ -87,12 +104,9 @@ export async function handleSubmitResult(interaction: ChatInputCommandInteractio
       defendingTeamTournamentId,
     ).populate({
       path: 'team',
-      select: 'name',
+      select: 'name discordRole',
     });
     console.log(`LOG || handleSubmitResult || defendingTeamTournament ->`, defendingTeamTournament);
-
-    const challengerTeamName = challengerTeamTournament?.team?.name || 'Challenger Team';
-    const defendingTeamName = defendingTeamTournament?.team?.name || 'Defending Team';
 
     // Determine which team the user belongs to
     const challengerTeam = await Team.findById(challengerTeamTournament?.team);
@@ -132,22 +146,6 @@ export async function handleSubmitResult(interaction: ChatInputCommandInteractio
         ? challengerTeamTournamentId.toString()
         : defendingTeamTournamentId.toString();
 
-    const winnerTeamName = isChallengerMember
-      ? isWinner
-        ? challengerTeamName
-        : defendingTeamName
-      : isWinner
-        ? defendingTeamName
-        : challengerTeamName;
-
-    const loserTeamName = isChallengerMember
-      ? isWinner
-        ? defendingTeamName
-        : challengerTeamName
-      : isWinner
-        ? challengerTeamName
-        : defendingTeamName;
-
     // Map the generic 'winner'/'loser' to actual team IDs
     const mappedGames = games.map(game => ({
       winner: game.winner === 'winner' ? winnerTeamId : loserTeamId,
@@ -162,31 +160,214 @@ export async function handleSubmitResult(interaction: ChatInputCommandInteractio
     );
 
     if (success) {
-      const embed = createChallengeEmbed(
+      // Get the updated challenge to access tier and prestige information
+      const updatedChallenge = await challengeService.getChallengeById(challengeId);
+
+      // Get team names for better display
+      const challengerTeamTournament = await TeamTournament.findById(
+        updatedChallenge?.challengerTeamTournament,
+      ).populate({
+        path: 'team',
+        select: 'name discordRole',
+      });
+
+      const defendingTeamTournament = await TeamTournament.findById(
+        updatedChallenge?.defendingTeamTournament,
+      ).populate({
+        path: 'team',
+        select: 'name discordRole',
+      });
+
+      // Determine winner and loser teams based on the IDs
+      const winnerTeamTournament =
+        winnerTeamId === challengerTeamTournament?._id.toString()
+          ? challengerTeamTournament
+          : defendingTeamTournament;
+
+      const loserTeamTournament =
+        winnerTeamId === challengerTeamTournament?._id.toString()
+          ? defendingTeamTournament
+          : challengerTeamTournament;
+
+      // Get the team data for both winner and loser
+      const winnerTeam = winnerTeamTournament?.team;
+      const loserTeam = loserTeamTournament?.team;
+
+      const winnerRoleName = winnerTeam?.discordRole || winnerTeam?.name || 'Winner Team';
+      const loserRoleName = loserTeam?.discordRole || loserTeam?.name || 'Loser Team';
+
+      // Create multiple embeds for pagination
+      const embeds: EmbedBuilder[] = [];
+
+      // First embed - Challenge Result Summary
+      const summaryEmbed = createChallengeEmbed(
         challengeId,
         'Completed',
         `${StatusIcons.TROPHY} Challenge result submitted successfully!`,
       ).addFields(
-        { name: 'Winner', value: winnerTeamName, inline: true },
-        { name: 'Loser', value: loserTeamName, inline: true },
+        { name: 'Winner', value: `${winnerRoleName}`, inline: true },
+        { name: 'Loser', value: `${loserRoleName}`, inline: true },
         { name: 'Score', value: score, inline: true },
-        {
-          name: 'Game Details',
-          value: mappedGames
-            .map((game, i) => {
-              const gameWinnerName = game.winner === winnerTeamId ? winnerTeamName : loserTeamName;
-              const gameLoserName = game.loser === loserTeamId ? loserTeamName : winnerTeamName;
-              return `Game ${i + 1}: ${gameWinnerName} defeated ${gameLoserName}`;
-            })
-            .join('\n'),
-        },
-        {
-          name: 'Tier Changes',
-          value: 'Team tiers and prestige points have been updated based on this result.',
-        },
       );
+      embeds.push(summaryEmbed);
 
-      await interaction.editReply({ embeds: [embed] });
+      // Second embed - Tier Changes
+      const tierEmbed = createChallengeEmbed(
+        challengeId,
+        'Tier Changes',
+        `${StatusIcons.STAR} Tier changes after the challenge:`,
+      ).addFields({
+        name: 'Tier Changes',
+        value: `${challengerTeamTournament?.team?.name || 'Challenger'}: Tier ${updatedChallenge?.tierBefore.challenger} → ${updatedChallenge?.tierAfter?.challenger || updatedChallenge?.tierBefore.challenger}\n${defendingTeamTournament?.team?.name || 'Defender'}: Tier ${updatedChallenge?.tierBefore.defending} → ${updatedChallenge?.tierAfter?.defending || updatedChallenge?.tierBefore.defending}`,
+      });
+      embeds.push(tierEmbed);
+
+      // Third embed - Prestige Points
+      const prestigeEmbed = createChallengeEmbed(
+        challengeId,
+        'Prestige Points',
+        `${StatusIcons.TROPHY} Prestige points awarded:`,
+      ).addFields({
+        name: 'Prestige Points',
+        value: `${challengerTeamTournament?.team?.name || 'Challenger'}: +${updatedChallenge?.prestigeAwarded?.challenger || 0} points\n${defendingTeamTournament?.team?.name || 'Defender'}: +${updatedChallenge?.prestigeAwarded?.defending || 0} points`,
+      });
+      embeds.push(prestigeEmbed);
+
+      // Add screenshots for each game
+      if (screenshots.length > 0) {
+        screenshots.forEach((screenshot, index) => {
+          const gameNumber = index + 1;
+          const screenshotEmbed = createChallengeEmbed(
+            challengeId,
+            `Game ${gameNumber} Screenshot`,
+            `${StatusIcons.TROPHY} Game ${gameNumber} result screenshot:`,
+          ).setImage(screenshot.url);
+          embeds.push(screenshotEmbed);
+        });
+      }
+
+      // Find the results channel
+      const resultsChannel = interaction.guild?.channels.cache.find(
+        channel => channel.name === '🎮│résultats' && channel instanceof TextChannel,
+      ) as TextChannel;
+      console.log(`LOG || handleSubmitResult || resultsChannel ->`, resultsChannel);
+
+      if (!resultsChannel) {
+        const embed = createErrorEmbed(
+          'Channel Not Found',
+          'Could not find the results channel.',
+          'Please make sure the 🎮│résultats channel exists.',
+        );
+        await interaction.editReply({ embeds: [embed] });
+        return;
+      }
+
+      // Send the first embed to the results channel
+      if (embeds.length > 0) {
+        if (embeds.length === 1) {
+          await resultsChannel.send({ embeds: [embeds[0]] });
+        } else {
+          // Create pagination if there are multiple embeds
+          let currentPage = 0;
+
+          const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+            new ButtonBuilder()
+              .setCustomId('prev')
+              .setLabel('Previous')
+              .setStyle(ButtonStyle.Primary)
+              .setEmoji('⬅️')
+              .setDisabled(true),
+            new ButtonBuilder()
+              .setCustomId('next')
+              .setLabel('Next')
+              .setStyle(ButtonStyle.Primary)
+              .setEmoji('➡️')
+              .setDisabled(embeds.length <= 1),
+          );
+
+          const response = await resultsChannel.send({
+            embeds: [embeds[0]],
+            components: [row],
+          });
+
+          // Create collector for button interactions
+          const collector = response.createMessageComponentCollector({
+            componentType: ComponentType.Button,
+            time: 120000, // 2 minutes
+          });
+
+          collector.on('collect', async i => {
+            if (i.user.id !== interaction.user.id) {
+              await i.reply({
+                content: `${StatusIcons.ERROR} Only ${interaction.user.toString()} can use these buttons.`,
+                ephemeral: true,
+              });
+              return;
+            }
+
+            await i.deferUpdate();
+
+            if (i.customId === 'prev') {
+              if (currentPage > 0) {
+                currentPage--;
+              }
+            } else if (i.customId === 'next') {
+              if (currentPage < embeds.length - 1) {
+                currentPage++;
+              }
+            }
+
+            // Update buttons
+            const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+              new ButtonBuilder()
+                .setCustomId('prev')
+                .setLabel('Previous')
+                .setStyle(ButtonStyle.Primary)
+                .setEmoji('⬅️')
+                .setDisabled(currentPage === 0),
+              new ButtonBuilder()
+                .setCustomId('next')
+                .setLabel('Next')
+                .setStyle(ButtonStyle.Primary)
+                .setEmoji('➡️')
+                .setDisabled(currentPage === embeds.length - 1),
+            );
+
+            await response.edit({
+              embeds: [embeds[currentPage]],
+              components: [row],
+            });
+          });
+
+          collector.on('end', async () => {
+            // Disable all buttons when collector ends
+            const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+              new ButtonBuilder()
+                .setCustomId('prev')
+                .setLabel('Previous')
+                .setStyle(ButtonStyle.Secondary)
+                .setEmoji('⬅️')
+                .setDisabled(true),
+              new ButtonBuilder()
+                .setCustomId('next')
+                .setLabel('Next')
+                .setStyle(ButtonStyle.Secondary)
+                .setEmoji('➡️')
+                .setDisabled(true),
+            );
+
+            await response.edit({
+              embeds: [embeds[currentPage]],
+              components: [row],
+            });
+          });
+        }
+      }
+
+      // Send a confirmation message to the user
+      await interaction.editReply({
+        content: `${StatusIcons.SUCCESS} Challenge result has been posted in ${resultsChannel.toString()}`,
+      });
     } else {
       const embed = createErrorEmbed(
         'Submission Failed',

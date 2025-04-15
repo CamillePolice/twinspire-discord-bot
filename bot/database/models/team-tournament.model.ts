@@ -51,6 +51,7 @@ export interface ITeamTournament {
   team: Schema.Types.ObjectId & {
     name: string;
     captainId: string;
+    discordRole?: string;
   };
   tournament: Schema.Types.ObjectId;
   tier: number;
