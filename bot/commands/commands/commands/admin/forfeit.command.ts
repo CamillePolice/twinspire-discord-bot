@@ -7,7 +7,7 @@ import {
   createChallengeEmbed,
   StatusIcons,
 } from '../../../../helpers/message.helpers';
-import { TeamTournament } from '../../../../database/models';
+import { TeamTournament, Challenge } from '../../../../database/models';
 
 const challengeService = new ChallengeService();
 
@@ -22,6 +22,8 @@ export async function handleForfeit(interaction: ChatInputCommandInteraction): P
     const challengeId = interaction.options.getString('challenge_id', true);
     const forfeiter = interaction.options.getString('forfeiter', true).toLowerCase();
     const reason = interaction.options.getString('reason', true);
+    const unfair = interaction.options.getBoolean('unfair', false) || false;
+    const forfeitType = interaction.options.getString('forfeit_type', false);
 
     // Get challenge details
     const challenge = await challengeService.getChallengeById(challengeId);
@@ -72,7 +74,21 @@ export async function handleForfeit(interaction: ChatInputCommandInteraction): P
     const forfeiterTeamName = forfeiter === 'challenger' ? challengerTeamName : defendingTeamName;
     const winnerTeamName = forfeiter === 'challenger' ? defendingTeamName : challengerTeamName;
 
-    const success = await challengeService.forfeitChallenge(challengeId, forfeiterTeamId);
+    // Set the unfairForfeit flag and forfeit type
+    if (unfair || forfeitType) {
+      await Challenge.updateOne(
+        { challengeId },
+        { 
+          $set: { 
+            unfairForfeit: true,
+            forfeitType: forfeitType || (unfair ? 'unfair' : undefined),
+            forfeitPenalty: forfeitType === 'no_show' ? 15 : forfeitType === 'give_up' ? 20 : 10
+          } 
+        }
+      );
+    }
+
+    const success = await challengeService.forfeitChallenge(challengeId, forfeiterTeamId, unfair);
 
     if (success) {
       const embed = createChallengeEmbed(
@@ -85,8 +101,13 @@ export async function handleForfeit(interaction: ChatInputCommandInteraction): P
         { name: 'Reason', value: reason },
         {
           name: 'Result',
-          value:
-            'The winning team has been awarded prestige points and tier adjustments have been made if applicable.',
+          value: forfeitType === 'no_show'
+            ? 'The winning team has been awarded prestige points and tier adjustments have been made. The forfeiting team has been penalized with -15 points.'
+            : forfeitType === 'give_up'
+              ? 'The winning team has been awarded prestige points and tier adjustments have been made. The forfeiting team has been penalized with -20 points.'
+              : unfair
+                ? 'The winning team has been awarded prestige points and tier adjustments have been made. The forfeiting team has been penalized with -10 points.'
+                : 'The winning team has been awarded prestige points and tier adjustments have been made if applicable.',
         },
       );
 

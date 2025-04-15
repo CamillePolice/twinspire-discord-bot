@@ -14,7 +14,7 @@ import {
   createChallengeEmbed,
   StatusIcons,
 } from '../../../../helpers/message.helpers';
-import { TeamTournament, Team } from '../../../../database/models';
+import { TeamTournament, Team, Challenge } from '../../../../database/models';
 import { ChallengeStatus } from '../../../../database/enums/challenge.enums';
 
 const challengeService = new ChallengeService();
@@ -26,6 +26,8 @@ export async function handleSubmitResult(interaction: ChatInputCommandInteractio
     const challengeId = interaction.options.getString('challenge_id', true);
     const result = interaction.options.getString('result', true);
     const score = interaction.options.getString('score', true);
+    const noShow = interaction.options.getBoolean('no_show', false) || false;
+    const giveUp = interaction.options.getBoolean('give_up', false) || false;
 
     // Get all screenshots
     const screenshots = [];
@@ -152,6 +154,20 @@ export async function handleSubmitResult(interaction: ChatInputCommandInteractio
       loser: game.loser === 'winner' ? winnerTeamId : loserTeamId,
     }));
 
+    // Set the unfairForfeit flag based on no_show or give_up options
+    if (noShow || giveUp) {
+      await Challenge.updateOne(
+        { challengeId },
+        { 
+          $set: { 
+            unfairForfeit: true,
+            forfeitType: noShow ? 'no_show' : 'give_up',
+            forfeitPenalty: noShow ? 15 : 20
+          } 
+        }
+      );
+    }
+
     const success = await challengeService.submitChallengeResult(
       challengeId,
       winnerTeamId,
@@ -209,6 +225,20 @@ export async function handleSubmitResult(interaction: ChatInputCommandInteractio
         { name: 'Loser', value: `${loserRoleName}`, inline: true },
         { name: 'Score', value: score, inline: true },
       );
+
+      // Add forfeit information if applicable
+      if (noShow) {
+        summaryEmbed.addFields({
+          name: 'Forfeit Type',
+          value: `${StatusIcons.WARNING} No-Show (${loserRoleName} deducted 15 points)`,
+        });
+      } else if (giveUp) {
+        summaryEmbed.addFields({
+          name: 'Forfeit Type',
+          value: `${StatusIcons.WARNING} Give-Up (${loserRoleName} deducted 20 points)`,
+        });
+      }
+
       embeds.push(summaryEmbed);
 
       // Second embed - Tier Changes

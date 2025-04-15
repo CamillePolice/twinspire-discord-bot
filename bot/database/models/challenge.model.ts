@@ -87,6 +87,17 @@ const challengeSchema: Schema = new Schema(
       type: Boolean,
       default: false,
     },
+    unfairForfeit: {
+      type: Boolean,
+      default: false,
+    },
+    forfeitType: {
+      type: String,
+      enum: ['no_show', 'give_up'],
+    },
+    forfeitPenalty: {
+      type: Number,
+    },
   },
   {
     timestamps: true,
@@ -131,6 +142,9 @@ export interface IChallenge {
   tierAfter?: ITier;
   prestigeAwarded?: IPrestige;
   castDemand: boolean;
+  unfairForfeit?: boolean;
+  forfeitType?: 'no_show' | 'give_up';
+  forfeitPenalty?: number;
   createdAt: Date;
   updatedAt: Date;
 }

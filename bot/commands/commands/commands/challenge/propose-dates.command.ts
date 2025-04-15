@@ -31,6 +31,31 @@ export async function handleProposeDates(interaction: ChatInputCommandInteractio
       return;
     }
 
+    // Check if the user is from the challenged team
+    const isChallenger = challenge.challengerTeamTournament.toString() === interaction.user.id;
+    const isDefender = challenge.defendingTeamTournament.toString() === interaction.user.id;
+
+    if (!isChallenger && !isDefender) {
+      const embed = createErrorEmbed(
+        'Unauthorized',
+        'You are not authorized to propose dates for this challenge.',
+        'Only members of the teams involved in this challenge can propose dates.',
+      );
+      await interaction.editReply({ embeds: [embed] });
+      return;
+    }
+
+    // Only the defending team can propose dates
+    if (!isDefender) {
+      const embed = createErrorEmbed(
+        'Unauthorized',
+        'Only the defending team can propose dates.',
+        'The challenging team cannot propose dates for this challenge.',
+      );
+      await interaction.editReply({ embeds: [embed] });
+      return;
+    }
+
     if (challenge.proposedDates && challenge.proposedDates.length > 0) {
       const embed = createErrorEmbed(
         'Dates Already Proposed',

@@ -218,10 +218,9 @@ export class ChallengeService {
   ): Promise<boolean> {
     try {
       // Ensure winnerTeamId is a string, not an ObjectId
-      const winnerTeamIdString = typeof winnerTeamId === 'string' 
-        ? winnerTeamId 
-        : winnerTeamId.toString();
-        
+      const winnerTeamIdString =
+        typeof winnerTeamId === 'string' ? winnerTeamId : winnerTeamId.toString();
+
       // Create a properly typed result object
       const result: ChallengeResult = { winner: winnerTeamIdString, score, games };
 
@@ -278,7 +277,7 @@ export class ChallengeService {
             },
             updatedAt: new Date(),
           },
-        }
+        },
       );
 
       if (resultUpdate.modifiedCount === 0) {
@@ -336,9 +335,14 @@ export class ChallengeService {
    *
    * @param challengeId - ID of the challenge
    * @param forfeiterTeamId - ID of the team forfeiting
+   * @param unfair - If true, deducts 10 points from the forfeiting team
    * @returns Boolean indicating success
    */
-  async forfeitChallenge(challengeId: string, forfeiterTeamId: string): Promise<boolean> {
+  async forfeitChallenge(
+    challengeId: string,
+    forfeiterTeamId: string,
+    unfair: boolean = false,
+  ): Promise<boolean> {
     try {
       const challenge = await this.getChallengeById(challengeId);
       if (!challenge) {
@@ -368,6 +372,9 @@ export class ChallengeService {
 
       // Use the calculateForfeitResult helper function
       const forfeitResult = calculateForfeitResult(tournament, winnerTeamId, forfeiterTeamId);
+
+      // Store the unfair flag in the challenge for use in calculateChallengeOutcome
+      await Challenge.updateOne({ challengeId }, { $set: { unfairForfeit: unfair } });
 
       return await this.submitChallengeResult(
         challengeId,

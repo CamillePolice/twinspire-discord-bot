@@ -90,6 +90,36 @@ export async function handleScheduleChallenge(
       return;
     }
 
+    // Check if the user is a member of the challenger team
+    const challengerTeamTournament = await TeamTournament.findById(
+      challenge.challengerTeamTournament,
+    ).populate<{ team: ITeam }>('team');
+
+    if (!challengerTeamTournament) {
+      const embed = createErrorEmbed(
+        'Team Not Found',
+        'Could not find the challenger team for this challenge.',
+        'Please contact an administrator if this issue persists.',
+      );
+      await interaction.editReply({ embeds: [embed] });
+      return;
+    }
+
+    // Check if the user is a member of the challenger team
+    const isChallengerTeamMember = challengerTeamTournament.team.members.some(
+      member => member.discordId === interaction.user.id
+    );
+
+    if (!isChallengerTeamMember) {
+      const embed = createErrorEmbed(
+        'Permission Denied',
+        'Only members of the challenger team can schedule this challenge.',
+        'The defending team must wait for the challenger team to schedule the match.',
+      );
+      await interaction.editReply({ embeds: [embed] });
+      return;
+    }
+
     // Get the selected date (0-indexed array)
     const selectedDate = challenge.proposedDates[dateOption - 1];
 

@@ -135,6 +135,126 @@ export const createChallengeRecord = async (
 };
 
 /**
+ * Calculate prestige points based on tier difference and winner
+ */
+export const calculatePrestigePoints = (
+  isChallengerWinner: boolean,
+  tierDifference: number,
+): { challengerPrestige: number; defendingPrestige: number } => {
+  let challengerPrestige = 0;
+  let defendingPrestige = 0;
+
+  if (isChallengerWinner) {
+    // Challenger won
+    if (tierDifference > 0) {
+      // Won against higher tier
+      challengerPrestige = 10;
+      defendingPrestige = 3;
+    } else if (tierDifference === 0) {
+      // Won against same tier
+      challengerPrestige = 6;
+      defendingPrestige = 2;
+    } else {
+      // Won against lower tier
+      challengerPrestige = 4;
+      defendingPrestige = 1;
+    }
+  } else {
+    // Defender won
+    if (tierDifference > 0) {
+      // Lost against higher tier
+      challengerPrestige = 3;
+      defendingPrestige = 10;
+    } else if (tierDifference === 0) {
+      // Lost against same tier
+      challengerPrestige = 2;
+      defendingPrestige = 6;
+    } else {
+      // Lost against lower tier
+      challengerPrestige = 1;
+      defendingPrestige = 4;
+    }
+  }
+
+  return { challengerPrestige, defendingPrestige };
+};
+
+/**
+ * Calculate forfeit penalty if applicable
+ */
+export const calculateForfeitPenalty = (
+  challenge: IChallenge,
+  isChallengerWinner: boolean,
+  challengerTeamTournament: ITeamTournament,
+  challengerPrestige: number,
+  defendingPrestige: number,
+): { challengerPrestige: number; defendingPrestige: number } => {
+  if (!challenge.unfairForfeit) {
+    return { challengerPrestige, defendingPrestige };
+  }
+
+  // Determine which team forfeited
+  const forfeiterTeamId = isChallengerWinner
+    ? challenge.defendingTeamTournament.toString()
+    : challenge.challengerTeamTournament.toString();
+
+  // Apply custom penalty based on forfeit type
+  let penalty = 10; // Default penalty
+
+  if (challenge.forfeitType === 'no_show') {
+    penalty = 15;
+  } else if (challenge.forfeitType === 'give_up') {
+    penalty = 20;
+  } else if (challenge.forfeitPenalty) {
+    penalty = challenge.forfeitPenalty;
+  }
+
+  // Apply penalty to the forfeiting team
+  if (forfeiterTeamId === challengerTeamTournament._id.toString()) {
+    challengerPrestige -= penalty;
+  } else {
+    defendingPrestige -= penalty;
+  }
+
+  return { challengerPrestige, defendingPrestige };
+};
+
+/**
+ * Create team stats objects for challenger and defender
+ */
+export const createTeamStats = (
+  isChallengerWinner: boolean,
+  challengerTeamTournament: ITeamTournament,
+  defendingTeamTournament: ITeamTournament,
+  challengerPrestige: number,
+  defendingPrestige: number,
+  tournament: ITournament,
+): { challengerStats: ChallengeStats; defenderStats: ChallengeStats } => {
+  const challengerStats: ChallengeStats = {
+    tier: isChallengerWinner ? defendingTeamTournament.tier : undefined,
+    prestige: challengerPrestige,
+    winStreak: isChallengerWinner ? challengerTeamTournament.winStreak + 1 : 0,
+    wins: isChallengerWinner ? 1 : 0,
+    losses: isChallengerWinner ? 0 : 1,
+  };
+
+  const defenderStats: ChallengeStats = {
+    tier: !isChallengerWinner ? undefined : challengerTeamTournament.tier,
+    prestige: defendingPrestige,
+    winStreak: !isChallengerWinner ? defendingTeamTournament.winStreak + 1 : 0,
+    protectedUntil: !isChallengerWinner
+      ? new Date(
+          new Date().setDate(new Date().getDate() + tournament.rules.protectionDaysAfterDefense),
+        )
+      : undefined,
+    wins: !isChallengerWinner ? 1 : 0,
+    losses: !isChallengerWinner ? 0 : 1,
+  };
+
+  return { challengerStats, defenderStats };
+};
+
+/**
  * Calculate the outcome of a challenge (tiers, prestige, win streaks)
  */
 export const calculateChallengeOutcome = (
@@ -148,48 +268,48 @@ export const calculateChallengeOutcome = (
   challengerStats: ChallengeStats;
   defenderStats: ChallengeStats;
 } => {
-  let challengerPrestige = 0;
-  let defendingPrestige = 0;
-
   const tierAfter = {
     challenger: challengerTeamTournament.tier,
     defending: defendingTeamTournament.tier,
   };
 
   const isChallengerWinner = winnerTeamId === challenge.challengerTeamTournament.toString();
+  const challengerTier = challengerTeamTournament.tier;
+  const defenderTier = defendingTeamTournament.tier;
 
-  const protectionDays = tournament.rules.protectionDaysAfterDefense;
-  let protectedUntil = undefined;
+  // Determine tier difference
+  const tierDifference = defenderTier - challengerTier;
 
-  if (!isChallengerWinner) {
-    defendingPrestige = 50 + defendingTeamTournament.winStreak * 10;
-    challengerPrestige = 25;
+  // Calculate prestige points based on tier difference and winner
+  let { challengerPrestige, defendingPrestige } = calculatePrestigePoints(
+    isChallengerWinner,
+    tierDifference,
+  );
 
-    protectedUntil = new Date();
-    protectedUntil.setDate(protectedUntil.getDate() + protectionDays);
-  } else {
-    challengerPrestige = 100 + challengerTeamTournament.winStreak * 10;
-    defendingPrestige = 10;
+  // Swap tiers if challenger wins
+  if (isChallengerWinner) {
     tierAfter.challenger = defendingTeamTournament.tier;
     tierAfter.defending = challengerTeamTournament.tier;
   }
 
-  const challengerStats: ChallengeStats = {
-    tier: isChallengerWinner ? defendingTeamTournament.tier : undefined,
-    prestige: challengerPrestige,
-    winStreak: isChallengerWinner ? challengerTeamTournament.winStreak + 1 : 0,
-    wins: isChallengerWinner ? 1 : 0,
-    losses: isChallengerWinner ? 0 : 1,
-  };
+  // Apply unfair forfeit penalty if applicable
+  ({ challengerPrestige, defendingPrestige } = calculateForfeitPenalty(
+    challenge,
+    isChallengerWinner,
+    challengerTeamTournament,
+    challengerPrestige,
+    defendingPrestige,
+  ));
 
-  const defenderStats: ChallengeStats = {
-    tier: !isChallengerWinner ? undefined : challengerTeamTournament.tier,
-    prestige: defendingPrestige,
-    winStreak: !isChallengerWinner ? defendingTeamTournament.winStreak + 1 : 0,
-    protectedUntil: protectedUntil,
-    wins: !isChallengerWinner ? 1 : 0,
-    losses: !isChallengerWinner ? 0 : 1,
-  };
+  // Create team stats objects
+  const { challengerStats, defenderStats } = createTeamStats(
+    isChallengerWinner,
+    challengerTeamTournament,
+    defendingTeamTournament,
+    challengerPrestige,
+    defendingPrestige,
+    tournament,
+  );
 
   return { tierAfter, challengerStats, defenderStats };
 };
