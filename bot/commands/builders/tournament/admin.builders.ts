@@ -198,6 +198,12 @@ const buildUpdateTeamMemberSubcommand: SubcommandBuilder = {
       )
       .addStringOption(option =>
         option.setName('opgg').setDescription('OP.GG link').setRequired(true),
+      )
+      .addBooleanOption(option =>
+        option
+          .setName('make_captain')
+          .setDescription('Make this user the team captain')
+          .setRequired(false),
       ),
 };
 
