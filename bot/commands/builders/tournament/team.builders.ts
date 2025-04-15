@@ -257,18 +257,6 @@ const buildSubmitResultSubcommand: SubcommandBuilder = {
             { name: '0-3', value: '0-3' },
           ),
       )
-      .addBooleanOption(option =>
-        option
-          .setName('no_show')
-          .setDescription('Mark as no-show (deducts 15 points from the losing team)')
-          .setRequired(false),
-      )
-      .addBooleanOption(option =>
-        option
-          .setName('give_up')
-          .setDescription('Mark as give-up (deducts 20 points from the losing team)')
-          .setRequired(false),
-      )
       .addAttachmentOption(option =>
         option
           .setName('screenshot1')
@@ -297,6 +285,18 @@ const buildSubmitResultSubcommand: SubcommandBuilder = {
         option
           .setName('screenshot5')
           .setDescription('Screenshot of game 5 result')
+          .setRequired(false),
+      )
+      .addBooleanOption(option =>
+        option
+          .setName('no_show')
+          .setDescription('Mark as no-show (deducts 15 points from the losing team)')
+          .setRequired(false),
+      )
+      .addBooleanOption(option =>
+        option
+          .setName('give_up')
+          .setDescription('Mark as give-up (deducts 20 points from the losing team)')
           .setRequired(false),
       ),
 };
