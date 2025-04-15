@@ -89,6 +89,9 @@ const buildForfeitSubcommand: SubcommandBuilder = {
           ),
       )
       .addStringOption(option =>
+        option.setName('reason').setDescription('Reason for forfeit').setRequired(true),
+      )
+      .addStringOption(option =>
         option
           .setName('forfeit_type')
           .setDescription('Type of forfeit')
@@ -97,9 +100,6 @@ const buildForfeitSubcommand: SubcommandBuilder = {
             { name: 'No-Show (deducts 15 points)', value: 'no_show' },
             { name: 'Give-Up (deducts 20 points)', value: 'give_up' },
           ),
-      )
-      .addStringOption(option =>
-        option.setName('reason').setDescription('Reason for forfeit').setRequired(true),
       )
       .addBooleanOption(option =>
         option
