@@ -180,10 +180,10 @@ export class TournamentMaintenanceScheduler {
     while (retries < this.config.maxRetries) {
       try {
         const challengerTeam = teams.find(
-          team => team._id.toString() === challenge.challengerTeamTournament.toString(),
+          team => team._id.toString() === challenge.challengerTeamTournament.team.toString(),
         );
         const defendingTeam = teams.find(
-          team => team._id.toString() === challenge.defendingTeamTournament.toString(),
+          team => team._id.toString() === challenge.defendingTeamTournament.team.toString(),
         );
 
         // Get grace period from tournament rules or use default
@@ -222,7 +222,7 @@ export class TournamentMaintenanceScheduler {
           // Submit forfeit
           const success = await this.challengeService.forfeitChallenge(
             challenge.challengeId,
-            challenge.defendingTeamTournament.toString(),
+            challenge.defendingTeamTournament.team.toString(),
           );
 
           if (success) {

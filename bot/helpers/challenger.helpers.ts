@@ -189,8 +189,8 @@ export const calculateForfeitPenalty = (
 
   // Determine which team forfeited
   const forfeiterTeamId = isChallengerWinner
-    ? challenge.defendingTeamTournament.toString()
-    : challenge.challengerTeamTournament.toString();
+    ? challenge.defendingTeamTournament._id.toString()
+    : challenge.challengerTeamTournament._id.toString();
 
   // Apply custom penalty based on forfeit type
   let penalty = 10; // Default penalty

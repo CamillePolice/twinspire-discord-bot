@@ -365,10 +365,10 @@ export class ChallengeService {
         return false;
       }
 
-      const isChallenger = forfeiterTeamId === challenge.challengerTeamTournament.toString();
+      const isChallenger = forfeiterTeamId === challenge.challengerTeamTournament.team.toString();
       const winnerTeamId = isChallenger
-        ? challenge.defendingTeamTournament.toString()
-        : challenge.challengerTeamTournament.toString();
+        ? challenge.defendingTeamTournament.team.toString()
+        : challenge.challengerTeamTournament.team.toString();
 
       // Use the calculateForfeitResult helper function
       const forfeitResult = calculateForfeitResult(tournament, winnerTeamId, forfeiterTeamId);

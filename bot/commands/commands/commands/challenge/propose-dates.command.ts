@@ -8,7 +8,7 @@ import {
   StatusIcons,
   parseWithFranceTimezone,
 } from '../../../../helpers/message.helpers';
-import { TeamTournament } from '../../../../database/models';
+import { TeamTournament, Team } from '../../../../database/models';
 import { ITeamMember } from '../../../../database/models/team.model';
 
 const challengeService = new ChallengeService();
@@ -30,10 +30,29 @@ export async function handleProposeDates(interaction: ChatInputCommandInteractio
       await interaction.editReply({ embeds: [embed] });
       return;
     }
+    console.log(`LOG || handleProposeDates || challenge ->`, challenge);
 
-    // Check if the user is from the challenged team
-    const isChallenger = challenge.challengerTeamTournament.toString() === interaction.user.id;
-    const isDefender = challenge.defendingTeamTournament.toString() === interaction.user.id;
+    // Get the teams for both challenger and defender
+    const challengerTeam = await Team.findById(challenge.challengerTeamTournament.team);
+    const defendingTeam = await Team.findById(challenge.defendingTeamTournament.team);
+
+    if (!challengerTeam || !defendingTeam) {
+      const embed = createErrorEmbed(
+        'Teams Not Found',
+        'Could not find one or both teams involved in this challenge.',
+        'Please contact an administrator.',
+      );
+      await interaction.editReply({ embeds: [embed] });
+      return;
+    }
+
+    // Check if the user is from either team
+    const isChallenger = challengerTeam.members.some(
+      member => member.discordId === interaction.user.id,
+    );
+    const isDefender = defendingTeam.members.some(
+      member => member.discordId === interaction.user.id,
+    );
 
     if (!isChallenger && !isDefender) {
       const embed = createErrorEmbed(

@@ -71,13 +71,13 @@ export async function handleForceResult(interaction: ChatInputCommandInteraction
 
     const winnerTeamId =
       winner === 'challenger'
-        ? challenge.challengerTeamTournament.toString()
-        : challenge.defendingTeamTournament.toString();
+        ? challenge.challengerTeamTournament.team.toString()
+        : challenge.defendingTeamTournament.team.toString();
 
     const loserTeamId =
       winner === 'challenger'
-        ? challenge.defendingTeamTournament.toString()
-        : challenge.challengerTeamTournament.toString();
+        ? challenge.defendingTeamTournament.team.toString()
+        : challenge.challengerTeamTournament.team.toString();
 
     const winnerTeamName = winner === 'challenger' ? challengerTeamName : defendingTeamName;
     const loserTeamName = winner === 'challenger' ? defendingTeamName : challengerTeamName;
